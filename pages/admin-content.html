@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J-Academy Admin — Contenu</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0D0D0D;min-height:100vh;display:flex;font-family:var(--font-body)}
+    .sidebar{width:220px;flex-shrink:0;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+    .sb-logo{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid #1e1e1e;}
+    .sb-logo img{width:28px;height:28px;object-fit:contain;border-radius:5px;}
+    .sb-logo span{font-family:var(--font-head);font-size:0.95rem;font-weight:700;color:#fff;letter-spacing:0.05em;}
+    .sb-badge{font-size:0.62rem;background:#1e1e1e;color:#555;padding:2px 7px;border-radius:10px;margin-left:auto;}
+    .sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+    .sb-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:0.83rem;color:#555;text-decoration:none;transition:all 0.15s;cursor:pointer;border:none;background:none;font-family:var(--font-body);width:100%;text-align:left;}
+    .sb-link i{font-size:1rem;}
+    .sb-link:hover{background:#1a1a1a;color:#ccc;}
+    .sb-link.active{background:#1e1e1e;color:#fff;}
+    .sb-section{font-size:0.65rem;color:#2a2a2a;letter-spacing:0.1em;text-transform:uppercase;padding:12px 10px 4px;font-weight:600;}
+    .sb-bottom{padding:12px 10px;border-top:1px solid #1e1e1e;}
+    .sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+    .sb-avatar{width:28px;height:28px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;}
+    .sb-uname{font-size:0.78rem;color:#888;}
+    .btn-logout-sb{display:flex;align-items:center;gap:7px;width:100%;padding:8px 10px;border-radius:7px;background:none;border:none;color:#444;font-size:0.78rem;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;}
+    .btn-logout-sb:hover{background:#1a1a1a;color:#C0392B;}
+    .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{background:#111;border-bottom:1px solid #1e1e1e;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+    .page-title{font-family:var(--font-head);font-size:1rem;font-weight:600;color:#fff;}
+    .content{padding:24px 28px;flex:1;}
+
+    .two-col-layout{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+
+    /* ── Formulaire ajout ── */
+    .add-form{background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:22px;}
+    .form-title{font-family:var(--font-head);font-size:0.9rem;color:#fff;margin-bottom:18px;display:flex;align-items:center;gap:8px;padding-bottom:12px;border-bottom:1px solid #1e1e1e;}
+    .form-title i{color:#555;}
+    .adm-label{display:block;font-size:0.75rem;color:#555;margin-bottom:5px;font-weight:500;margin-top:12px;}
+    .adm-label:first-of-type{margin-top:0;}
+    .adm-input,.adm-select{
+      width:100%;padding:9px 12px;background:#1a1a1a;border:1px solid #2a2a2a;
+      border-radius:8px;color:#ccc;font-size:0.85rem;outline:none;
+      font-family:var(--font-body);transition:border-color 0.2s;
+    }
+    .adm-input:focus,.adm-select:focus{border-color:#444;}
+    .adm-input::placeholder{color:#333;}
+    .adm-select option{background:#1a1a1a;}
+    .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0;}
+    .type-btn{
+      padding:10px 8px;border-radius:8px;border:1px solid #2a2a2a;
+      background:#1a1a1a;color:#555;font-size:0.78rem;cursor:pointer;
+      transition:all 0.15s;text-align:center;font-family:var(--font-body);
+      display:flex;flex-direction:column;align-items:center;gap:5px;
+    }
+    .type-btn i{font-size:1.1rem;}
+    .type-btn:hover{border-color:#444;color:#ccc;}
+    .type-btn.selected{border-color:#fff;background:#1e1e1e;color:#fff;}
+    .btn-add{
+      width:100%;margin-top:16px;padding:11px;background:#fff;color:#111;
+      border:none;border-radius:8px;font-size:0.88rem;font-weight:700;
+      cursor:pointer;font-family:var(--font-head);
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      transition:opacity 0.2s;
+    }
+    .btn-add:hover{opacity:0.9;}
+    .success-msg{display:none;background:#0a1f14;border:1px solid #1D9E75;color:#1D9E75;border-radius:7px;padding:10px 12px;font-size:0.8rem;margin-top:10px;align-items:center;gap:7px;}
+
+    /* ── Table contenu ── */
+    .table-panel{background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;}
+    .table-header{
+      padding:16px 20px;border-bottom:1px solid #1e1e1e;
+      display:flex;align-items:center;justify-content:space-between;
+    }
+    .table-title{font-family:var(--font-head);font-size:0.88rem;color:#fff;display:flex;align-items:center;gap:8px;}
+    .table-title i{color:#555;}
+    .filter-row{display:flex;gap:8px;}
+    .filter-sel{
+      background:#1a1a1a;border:1px solid #2a2a2a;color:#888;
+      padding:5px 10px;border-radius:6px;font-size:0.75rem;
+      font-family:var(--font-body);outline:none;cursor:pointer;
+    }
+    .search-mini{
+      background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;
+      padding:5px 10px;border-radius:6px;font-size:0.75rem;
+      font-family:var(--font-body);outline:none;width:140px;
+    }
+    .search-mini::placeholder{color:#333;}
+
+    table{width:100%;border-collapse:collapse;}
+    thead th{
+      padding:10px 16px;text-align:left;font-size:0.7rem;
+      color:#333;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+      border-bottom:1px solid #1e1e1e;background:#0f0f0f;
+    }
+    tbody tr{border-bottom:1px solid #191919;transition:background 0.1s;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:#161616;}
+    td{padding:12px 16px;font-size:0.8rem;color:#888;vertical-align:middle;}
+    td.td-title{color:#ccc;font-weight:500;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    .badge-type{
+      display:inline-flex;align-items:center;gap:4px;
+      padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:500;
+    }
+    .bt-video{background:#0a1929;color:#185FA5;}
+    .bt-resume{background:#0a1f14;color:#1D9E75;}
+    .bt-exercice{background:#1f1400;color:#BA7517;}
+    .bt-quiz{background:#1a0a14;color:#993556;}
+
+    .vis-toggle{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:3px 9px;border-radius:10px;font-size:0.7rem;cursor:pointer;
+      border:none;font-family:var(--font-body);font-weight:500;transition:all 0.15s;
+    }
+    .vis-on{background:#0a1f14;color:#1D9E75;}
+    .vis-off{background:#1a1a1a;color:#444;}
+
+    .action-btns{display:flex;gap:6px;}
+    .btn-edit,.btn-del{
+      padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;
+      border:1px solid;font-family:var(--font-body);transition:all 0.15s;
+      display:flex;align-items:center;gap:4px;
+    }
+    .btn-edit{border-color:#2a2a2a;background:transparent;color:#666;}
+    .btn-edit:hover{border-color:#555;color:#ccc;}
+    .btn-del{border-color:#2a2a2a;background:transparent;color:#444;}
+    .btn-del:hover{border-color:#C0392B;color:#C0392B;}
+
+    /* Modal edit */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:#111;border:1px solid #2a2a2a;border-radius:14px;padding:28px;width:100%;max-width:420px;}
+    .modal-title{font-family:var(--font-head);color:#fff;font-size:1rem;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+    .modal-btns{display:flex;gap:10px;margin-top:20px;}
+    .btn-save{flex:1;padding:10px;background:#fff;color:#111;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:var(--font-head);}
+    .btn-cancel{flex:1;padding:10px;background:#1a1a1a;color:#888;border:1px solid #2a2a2a;border-radius:8px;cursor:pointer;font-family:var(--font-body);}
+
+    .count-badge{background:#1a1a1a;color:#555;font-size:0.72rem;padding:2px 8px;border-radius:10px;margin-left:8px;}
+
+    /* Hamburger + responsive */
+    .hamburger{display:none;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px;margin-right:8px;flex-shrink:0;}
+    .hamburger:hover{color:#fff;}
+    .sidebar-backdrop{display:none;}
+    @media (max-width: 860px) {
+      .sidebar{transform:translateX(-100%);transition:transform 0.3s ease;position:fixed;top:0;left:0;bottom:0;z-index:200;}
+      .sidebar.open{transform:translateX(0);}
+      .sidebar.open ~ .sidebar-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;}
+      .main{margin-left:0;}
+      .hamburger{display:inline-flex;align-items:center;justify-content:center;}
+      .content{padding:16px;}
+      .topbar{padding:0 12px;}
+      .two-col-layout{grid-template-columns:1fr;}
+      .filter-row{flex-wrap:wrap;}
+      .filter-row .filter-sel{flex:1;min-width:0;}
+      .search-mini{width:100%;}
+    }
+    @media (max-width: 480px) {
+      .content{padding:10px;}
+      .topbar{height:48px;padding:0 8px;}
+      .page-title{font-size:0.88rem;}
+      .table-header{flex-direction:column;align-items:stretch;padding:12px 14px;}
+      .filter-row{flex-direction:column;}
+      .add-form{padding:16px;}
+      .modal{padding:20px;max-width:100%;margin:0 10px;}
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="../logo.png" alt="J-Academy">
+    <span>J-ACADEMY</span>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <a class="sb-link" href="admin-dashboard.html"><i class="ti ti-dashboard"></i> Tableau de bord</a>
+    <div class="sb-section">Contenu</div>
+    <a class="sb-link active" href="admin-content.html"><i class="ti ti-files"></i> Gérer le contenu</a>
+    <div class="sb-section">Utilisateurs</div>
+    <a class="sb-link" href="admin-users.html"><i class="ti ti-users"></i> Comptes inscrits</a>
+    <div class="sb-section">Plateforme</div>
+    <a class="sb-link" href="modules.html" target="_blank"><i class="ti ti-external-link"></i> Voir la plateforme</a>
+  </nav>
+  <div class="sb-bottom">
+    <div class="sb-user"><div class="sb-avatar">A</div><div class="sb-uname">Administrateur</div></div>
+    <button class="btn-logout-sb" onclick="adminLogout()"><i class="ti ti-logout"></i> Déconnexion</button>
+  </div>
+</aside>
+<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="page-title"><i class="ti ti-files" style="margin-right:8px;color:#555"></i>Gestion du contenu</div>
+    <div style="font-size:0.78rem;color:#444" id="content-count-top"></div>
+  </div>
+
+  <div class="content">
+    <div class="two-col-layout">
+
+      <!-- Formulaire ajout -->
+      <div class="add-form">
+        <div class="form-title"><i class="ti ti-plus"></i> Ajouter un contenu</div>
+
+        <label class="adm-label">Niveau scolaire</label>
+        <select class="adm-select" id="f-niveau">
+          <option value="college1">1ère année Collège</option>
+          <option value="college2">2ème année Collège</option>
+          <option value="college3">3ème année Collège</option>
+          <option value="tronc">Tronc commun</option>
+          <option value="bac1">1ère Bac</option>
+          <option value="bac2" selected>2ème Bac</option>
+        </select>
+
+        <label class="adm-label">Matière</label>
+        <select class="adm-select" id="f-matiere">
+          <option value="maths">Mathématiques</option>
+          <option value="physique">Physique-Chimie</option>
+          <option value="svt">SVT</option>
+          <option value="francais">Français</option>
+          <option value="anglais">Anglais</option>
+          <option value="histoire">Histoire-Géo</option>
+          <option value="philo">Philosophie</option>
+          <option value="informatique">Informatique</option>
+        </select>
+
+        <label class="adm-label">Type de contenu</label>
+        <div class="type-grid">
+          <button class="type-btn selected" data-type="video" onclick="selectType(this)">
+            <i class="ti ti-video"></i> Vidéo
+          </button>
+          <button class="type-btn" data-type="resume" onclick="selectType(this)">
+            <i class="ti ti-file-text"></i> Résumé PDF
+          </button>
+          <button class="type-btn" data-type="exercice" onclick="selectType(this)">
+            <i class="ti ti-pencil"></i> Exercices
+          </button>
+          <button class="type-btn" data-type="quiz" onclick="selectType(this)">
+            <i class="ti ti-help-circle"></i> Quiz
+          </button>
+        </div>
+
+        <label class="adm-label">Titre du cours</label>
+        <input class="adm-input" type="text" id="f-titre" placeholder="Ex: Introduction — Les fonctions">
+
+        <div id="lien-field">
+          <label class="adm-label">Lien (YouTube, Vimeo ou URL PDF)</label>
+          <input class="adm-input" type="url" id="f-lien" placeholder="https://youtube.com/watch?v=...">
+        </div>
+
+        <div id="duree-field">
+          <label class="adm-label">Durée / Pages</label>
+          <input class="adm-input" type="text" id="f-duree" placeholder="Ex: 32 min ou 8 pages">
+        </div>
+
+        <label class="adm-label" style="margin-top:12px">Ou uploader un fichier (vidéo/PDF)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="file" id="f-file" accept="video/mp4,video/webm,video/ogg,application/pdf,image/*" style="display:none" onchange="onFileSelect(this)">
+          <button class="type-btn" style="flex:1;padding:10px" onclick="document.getElementById('f-file').click()">
+            <i class="ti ti-upload"></i> <span id="file-name">Choisir un fichier</span>
+          </button>
+        </div>
+        <div id="upload-progress" style="display:none;margin-top:8px;font-size:0.75rem;color:#666">
+          <i class="ti ti-loader"></i> Upload en cours...
+        </div>
+
+        <button class="btn-add" onclick="submitContent()">
+          <i class="ti ti-plus"></i> Publier le contenu
+        </button>
+        <div class="success-msg" id="success-msg">
+          <i class="ti ti-check"></i> Contenu ajouté et publié !
+        </div>
+      </div>
+
+      <!-- Table contenu -->
+      <div>
+        <div class="table-panel">
+          <div class="table-header">
+            <div class="table-title">
+              <i class="ti ti-list"></i> Tous les contenus
+              <span class="count-badge" id="content-count">0</span>
+            </div>
+            <div class="filter-row">
+              <input class="search-mini" type="text" id="search-content" placeholder="Rechercher..." oninput="renderTable()">
+              <select class="filter-sel" id="filter-type" onchange="renderTable()">
+                <option value="">Tout type</option>
+                <option value="video">Vidéos</option>
+                <option value="resume">Résumés</option>
+                <option value="exercice">Exercices</option>
+                <option value="quiz">Quiz</option>
+              </select>
+              <select class="filter-sel" id="filter-niveau" onchange="renderTable()">
+                <option value="">Tout niveau</option>
+                <option value="college1">1ère année Collège</option>
+          <option value="college2">2ème année Collège</option>
+          <option value="college3">3ème année Collège</option>
+                <option value="tronc">Tronc</option>
+                <option value="bac1">1ère Bac</option>
+                <option value="bac2">2ème Bac</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead>
+                <tr>
+                  <th>Titre</th>
+                  <th>Type</th>
+                  <th>Niveau</th>
+                  <th>Matière</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="content-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal édition -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title"><i class="ti ti-edit"></i> Modifier le contenu</div>
+    <input type="hidden" id="edit-id">
+    <label class="adm-label">Titre</label>
+    <input class="adm-input" type="text" id="edit-titre" style="margin-bottom:10px">
+    <label class="adm-label">Lien</label>
+    <input class="adm-input" type="text" id="edit-lien" style="margin-bottom:10px">
+    <label class="adm-label">Durée / Pages</label>
+    <input class="adm-input" type="text" id="edit-duree">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn-save" onclick="saveEdit()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin.js"></script>
+<script src="../js/api.js"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');}
+document.addEventListener('click',function(e){var s=document.querySelector('.sidebar');if(s.classList.contains('open')&&!s.contains(e.target)&&!e.target.closest('.hamburger'))s.classList.remove('open');});
+requireAdmin();
+var selectedType = 'video';
+
+function selectType(btn) {
+  document.querySelectorAll('.type-btn').forEach(function(b){ b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  selectedType = btn.getAttribute('data-type');
+  var showLien  = selectedType !== 'quiz';
+  var showDuree = true;
+  document.getElementById('lien-field').style.display  = showLien  ? 'block' : 'none';
+  document.getElementById('duree-field').querySelector('.adm-label').textContent =
+    (selectedType==='video') ? 'Durée' : (selectedType==='quiz') ? 'Nombre de questions' : 'Nombre de pages';
+}
+
+var selectedFile = null;
+
+function onFileSelect(input) {
+  selectedFile = input.files[0];
+  document.getElementById('file-name').textContent = selectedFile ? selectedFile.name : 'Choisir un fichier';
+}
+
+function submitContent() {
+  var titre = document.getElementById('f-titre').value.trim();
+  if (!titre) { alert('Veuillez entrer un titre.'); return; }
+
+  var item = {
+    niveau:   document.getElementById('f-niveau').value,
+    matiere:  document.getElementById('f-matiere').value,
+    type:     selectedType,
+    titre:    titre,
+    lien:     document.getElementById('f-lien').value.trim(),
+    duree:    document.getElementById('f-duree').value.trim(),
+  };
+
+  function doAdd() {
+    addContent(item);
+    resetForm();
+    if (window.API) {
+      API.addContent(item).catch(function(err){
+        console.log('API indisponible, contenu sauvegardé en local uniquement');
+      });
+    }
+  }
+
+  if (selectedFile && window.API) {
+    var prog = document.getElementById('upload-progress');
+    prog.style.display = 'block';
+    prog.innerHTML = '<i class="ti ti-loader"></i> Upload en cours...';
+    API.uploadFile(selectedFile).then(function(r) {
+      item.lien = r.url;
+      item.duree = item.duree || (selectedFile.type.startsWith('video/') ? 'Vidéo locale' : 'Fichier local');
+      doAdd();
+    }).catch(function(err) {
+      prog.innerHTML = '<span style="color:#C0392B"><i class="ti ti-alert-circle"></i> ' + err.message + '. <br><br>Lancez le serveur : double-cliquez sur <b>start-server.bat</b> ou faites <b>npm start</b> dans le dossier <b>server/</b>, puis rechargez cette page via <b>http://localhost:3001</b>.</span>';
+      setTimeout(function(){ prog.style.display='none'; }, 5000);
+    });
+    return;
+  }
+
+  doAdd();
+}
+
+function resetForm() {
+  document.getElementById('f-titre').value = '';
+  document.getElementById('f-lien').value  = '';
+  document.getElementById('f-duree').value = '';
+  selectedFile = null;
+  document.getElementById('file-name').textContent = 'Choisir un fichier';
+  document.getElementById('upload-progress').style.display = 'none';
+  var msg = document.getElementById('success-msg');
+  msg.style.display = 'flex';
+  setTimeout(function(){ msg.style.display='none'; }, 3000);
+  renderTable();
+}
+
+var TYPE_CLASS = {video:'bt-video',resume:'bt-resume',exercice:'bt-exercice',quiz:'bt-quiz'};
+var TYPE_ICON  = {video:'ti-video',resume:'ti-file-text',exercice:'ti-pencil',quiz:'ti-help-circle'};
+
+function renderTable() {
+  var q  = (document.getElementById('search-content').value||'').toLowerCase();
+  var ft = document.getElementById('filter-type').value;
+  var fn = document.getElementById('filter-niveau').value;
+  var list = getContent().filter(function(c){
+    return (!q  || c.titre.toLowerCase().includes(q))
+        && (!ft || c.type===ft)
+        && (!fn || c.niveau===fn);
+  });
+  document.getElementById('content-count').textContent = list.length;
+  document.getElementById('content-count-top').textContent = getContent().length + ' contenus publiés';
+  var tbody = document.getElementById('content-tbody');
+  tbody.innerHTML = '';
+  if(list.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#333;padding:30px">Aucun contenu trouvé</td></tr>';
+    return;
+  }
+  list.forEach(function(c){
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="td-title" title="'+c.titre+'">'+c.titre+'</td>'+
+      '<td><span class="badge-type '+(TYPE_CLASS[c.type]||'')+' "><i class="ti '+(TYPE_ICON[c.type]||'ti-file')+'"></i> '+(TYPE_LABELS[c.type]||c.type)+'</span></td>'+
+      '<td>'+(NIVEAU_LABELS[c.niveau]||c.niveau)+'</td>'+
+      '<td>'+(MATIERE_LABELS[c.matiere]||c.matiere)+'</td>'+
+      '<td><button class="vis-toggle '+(c.visible?'vis-on':'vis-off')+'" onclick="toggleVis('+c.id+')"><i class="ti '+(c.visible?'ti-eye':'ti-eye-off')+'"></i>'+(c.visible?'Publié':'Masqué')+'</button></td>'+
+      '<td><div class="action-btns">'+
+        '<button class="btn-edit" onclick="openEdit('+c.id+')"><i class="ti ti-edit"></i> Modifier</button>'+
+        '<button class="btn-del" onclick="confirmDel('+c.id+')"><i class="ti ti-trash"></i></button>'+
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleVis(id){
+  toggleVisible(id);
+  renderTable();
+  if (window.API) API.toggleContent(id).catch(function(){});
+}
+
+function confirmDel(id){
+  if(confirm('Supprimer ce contenu définitivement ?')){
+    deleteContent(id);
+    renderTable();
+    if (window.API) API.deleteContent(id).catch(function(){});
+  }
+}
+
+function openEdit(id){
+  var item = getContent().find(function(c){ return c.id==id; });
+  if(!item) return;
+  document.getElementById('edit-id').value    = id;
+  document.getElementById('edit-titre').value = item.titre;
+  document.getElementById('edit-lien').value  = item.lien||'';
+  document.getElementById('edit-duree').value = item.duree||item.pages||'';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('edit-modal').classList.remove('open'); }
+
+function saveEdit(){
+  var id = document.getElementById('edit-id').value;
+  var updates = {
+    titre: document.getElementById('edit-titre').value.trim(),
+    lien:  document.getElementById('edit-lien').value.trim(),
+    duree: document.getElementById('edit-duree').value.trim(),
+  };
+  updateContent(id, updates);
+  closeModal();
+  renderTable();
+  if (window.API) API.updateContent(id, updates).catch(function(){});
+}
+
+function syncContent() {
+  if (!window.API) { renderTable(); return; }
+  // Nettoyer les doublons existants dans localStorage
+  var local = getContent();
+  var seen = {};
+  var clean = local.filter(function(c) {
+    var key = c.titre + '|' + c.matiere + '|' + (c.niveau || 'all');
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+  if (clean.length < local.length) {
+    localStorage.setItem('jacademy_content', JSON.stringify(clean));
+    local = clean;
+  }
+  API.getContent().then(function(items) {
+    if (items && items.length) {
+      var merged = items.slice();
+      local.forEach(function(c) {
+        if (!merged.find(function(m){ return m.id == c.id || m.titre === c.titre; })) {
+          merged.push(c);
+        }
+      });
+      localStorage.setItem('jacademy_content', JSON.stringify(merged));
+    }
+    renderTable();
+  }).catch(function() {
+    renderTable();
+  });
+}
+syncContent();
+</script>
+</body>
+</html>

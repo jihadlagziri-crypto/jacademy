@@ -1,0 +1,8 @@
+node_modules/
+server/node_modules/
+server/uploads/
+server/jacademy.db
+server/mail-config.json
+*.zip
+.DS_Store
+Thumbs.db

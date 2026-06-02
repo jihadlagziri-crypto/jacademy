@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>J-Academy Admin — Utilisateurs</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0D0D0D;min-height:100vh;display:flex;font-family:var(--font-body)}
+    .sidebar{width:220px;flex-shrink:0;background:#111;border-right:1px solid #1e1e1e;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+    .sb-logo{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid #1e1e1e;}
+    .sb-logo img{width:28px;height:28px;object-fit:contain;border-radius:5px;}
+    .sb-logo span{font-family:var(--font-head);font-size:0.95rem;font-weight:700;color:#fff;letter-spacing:0.05em;}
+    .sb-badge{font-size:0.62rem;background:#1e1e1e;color:#555;padding:2px 7px;border-radius:10px;margin-left:auto;}
+    .sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+    .sb-link{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:0.83rem;color:#555;text-decoration:none;transition:all 0.15s;cursor:pointer;border:none;background:none;font-family:var(--font-body);width:100%;text-align:left;}
+    .sb-link i{font-size:1rem;}
+    .sb-link:hover{background:#1a1a1a;color:#ccc;}
+    .sb-link.active{background:#1e1e1e;color:#fff;}
+    .sb-section{font-size:0.65rem;color:#2a2a2a;letter-spacing:0.1em;text-transform:uppercase;padding:12px 10px 4px;font-weight:600;}
+    .sb-bottom{padding:12px 10px;border-top:1px solid #1e1e1e;}
+    .sb-user{display:flex;align-items:center;gap:8px;padding:8px 10px;}
+    .sb-avatar{width:28px;height:28px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;}
+    .sb-uname{font-size:0.78rem;color:#888;}
+    .btn-logout-sb{display:flex;align-items:center;gap:7px;width:100%;padding:8px 10px;border-radius:7px;background:none;border:none;color:#444;font-size:0.78rem;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;}
+    .btn-logout-sb:hover{background:#1a1a1a;color:#C0392B;}
+    .main{margin-left:220px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{background:#111;border-bottom:1px solid #1e1e1e;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;}
+    .page-title{font-family:var(--font-head);font-size:1rem;font-weight:600;color:#fff;}
+    .content{padding:24px 28px;flex:1;}
+
+    /* KPI mini */
+    .mini-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+    .mk{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:14px 16px;}
+    .mk-lbl{font-size:0.72rem;color:#444;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+    .mk-val{font-family:var(--font-head);font-size:1.5rem;font-weight:700;color:#fff;}
+
+    /* Tableau users */
+    .table-panel{background:#111;border:1px solid #1e1e1e;border-radius:12px;overflow:hidden;}
+    .table-header{padding:16px 20px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .table-title{font-family:var(--font-head);font-size:0.88rem;color:#fff;display:flex;align-items:center;gap:8px;}
+    .table-title i{color:#555;}
+    .controls{display:flex;gap:8px;align-items:center;}
+    .search-bar-adm{
+      display:flex;align-items:center;gap:8px;background:#1a1a1a;
+      border:1px solid #2a2a2a;border-radius:7px;padding:6px 12px;width:220px;
+    }
+    .search-bar-adm i{color:#333;font-size:0.9rem;}
+    .search-bar-adm input{background:none;border:none;outline:none;color:#ccc;font-size:0.82rem;font-family:var(--font-body);flex:1;}
+    .search-bar-adm input::placeholder{color:#333;}
+    .filter-sel{background:#1a1a1a;border:1px solid #2a2a2a;color:#888;padding:6px 10px;border-radius:6px;font-size:0.75rem;font-family:var(--font-body);outline:none;cursor:pointer;}
+
+    table{width:100%;border-collapse:collapse;}
+    thead th{padding:10px 16px;text-align:left;font-size:0.7rem;color:#333;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;border-bottom:1px solid #1e1e1e;background:#0f0f0f;}
+    tbody tr{border-bottom:1px solid #191919;transition:background 0.1s;}
+    tbody tr:last-child{border-bottom:none;}
+    tbody tr:hover{background:#141414;}
+    td{padding:12px 16px;font-size:0.8rem;color:#666;vertical-align:middle;}
+
+    .user-cell{display:flex;align-items:center;gap:10px;}
+    .u-avatar{width:32px;height:32px;border-radius:50%;background:#1e1e1e;color:#888;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;font-family:var(--font-head);}
+    .u-name{font-size:0.83rem;color:#ccc;font-weight:500;}
+    .u-email{font-size:0.72rem;color:#444;margin-top:1px;}
+
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:0.7rem;font-weight:500;}
+    .s-active{background:#0a1f14;color:#1D9E75;}
+    .s-banned{background:#1f0a0a;color:#C0392B;}
+    .s-nonivel{background:#1a1a1a;color:#444;}
+
+    .level-pill{display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.72rem;background:#1a1a1a;color:#666;}
+
+    .action-btns{display:flex;gap:6px;}
+    .btn-ban,.btn-del-u,.btn-view{
+      padding:4px 10px;border-radius:6px;font-size:0.72rem;cursor:pointer;
+      border:1px solid;font-family:var(--font-body);transition:all 0.15s;
+      display:flex;align-items:center;gap:4px;
+    }
+    .btn-ban{border-color:#2a2a2a;background:transparent;color:#666;}
+    .btn-ban:hover{border-color:#BA7517;color:#BA7517;}
+    .btn-ban.is-banned{border-color:#1D9E75;color:#1D9E75;}
+    .btn-ban.is-banned:hover{border-color:#1D9E75;color:#1D9E75;}
+    .btn-del-u{border-color:#2a2a2a;background:transparent;color:#444;}
+    .btn-del-u:hover{border-color:#C0392B;color:#C0392B;}
+    .btn-view{border-color:#2a2a2a;background:transparent;color:#555;}
+    .btn-view:hover{border-color:#444;color:#ccc;}
+
+    .empty-state{text-align:center;padding:48px 20px;color:#2a2a2a;}
+    .empty-state i{font-size:2.5rem;display:block;margin-bottom:12px;}
+    .empty-state p{font-size:0.85rem;}
+
+    /* Modal détail */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:#111;border:1px solid #2a2a2a;border-radius:14px;padding:28px;width:100%;max-width:440px;}
+    .modal-title{font-family:var(--font-head);color:#fff;font-size:1rem;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+    .detail-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #191919;font-size:0.82rem;}
+    .detail-row:last-child{border-bottom:none;}
+    .dr-label{color:#444;width:120px;flex-shrink:0;display:flex;align-items:center;gap:6px;}
+    .dr-label i{font-size:0.9rem;}
+    .dr-val{color:#ccc;}
+    .btn-close{margin-top:18px;width:100%;padding:10px;background:#1a1a1a;color:#888;border:1px solid #2a2a2a;border-radius:8px;cursor:pointer;font-family:var(--font-body);}
+
+    .count-badge{background:#1a1a1a;color:#555;font-size:0.72rem;padding:2px 8px;border-radius:10px;margin-left:6px;}
+    .btn-ntf {
+      background: #111; color: #fff; border: none;
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      font-size: 0.8rem; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      font-family: var(--font-body); transition: 0.2s;
+      flex-shrink: 0;
+    }
+    .btn-ntf:hover { background: #333; }
+
+    /* Hamburger + responsive */
+    .hamburger{display:none;background:none;border:none;color:#888;font-size:1.3rem;cursor:pointer;padding:4px;margin-right:8px;flex-shrink:0;}
+    .hamburger:hover{color:#fff;}
+    .sidebar-backdrop{display:none;}
+    @media (max-width: 860px) {
+      .sidebar{transform:translateX(-100%);transition:transform 0.3s ease;position:fixed;top:0;left:0;bottom:0;z-index:200;}
+      .sidebar.open{transform:translateX(0);}
+      .sidebar.open ~ .sidebar-backdrop{display:block;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:150;}
+      .main{margin-left:0;}
+      .hamburger{display:inline-flex;align-items:center;justify-content:center;}
+      .content{padding:16px;}
+      .topbar{padding:0 12px;}
+      .mini-kpi{grid-template-columns:repeat(2,1fr);gap:8px;}
+      .controls{flex-wrap:wrap;}
+      .search-bar-adm{width:100%;}
+    }
+    @media (max-width: 480px) {
+      .mini-kpi{grid-template-columns:1fr;gap:6px;}
+      .content{padding:10px;}
+      .topbar{height:48px;padding:0 8px;}
+      .page-title{font-size:0.88rem;}
+      .table-header{flex-direction:column;align-items:stretch;padding:12px 14px;}
+      .controls{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sb-logo">
+    <img src="../logo.png" alt="J-Academy">
+    <span>J-ACADEMY</span>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <a class="sb-link" href="admin-dashboard.html"><i class="ti ti-dashboard"></i> Tableau de bord</a>
+    <div class="sb-section">Contenu</div>
+    <a class="sb-link" href="admin-content.html"><i class="ti ti-files"></i> Gérer le contenu</a>
+    <div class="sb-section">Utilisateurs</div>
+    <a class="sb-link active" href="admin-users.html"><i class="ti ti-users"></i> Comptes inscrits</a>
+    <div class="sb-section">Plateforme</div>
+    <a class="sb-link" href="modules.html" target="_blank"><i class="ti ti-external-link"></i> Voir la plateforme</a>
+  </nav>
+  <div class="sb-bottom">
+    <div class="sb-user"><div class="sb-avatar">A</div><div class="sb-uname">Administrateur</div></div>
+    <button class="btn-logout-sb" onclick="adminLogout()"><i class="ti ti-logout"></i> Déconnexion</button>
+  </div>
+</aside>
+<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+<div class="main">
+  <div class="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="page-title"><i class="ti ti-users" style="margin-right:8px;color:#555"></i>Gestion des comptes</div>
+    <div style="font-size:0.75rem;color:#333" id="total-label"></div>
+  </div>
+
+  <div class="content">
+
+    <!-- KPI mini -->
+    <div class="mini-kpi">
+      <div class="mk">
+        <div class="mk-lbl"><i class="ti ti-users"></i> Total inscrits</div>
+        <div class="mk-val" id="kpi-total">0</div>
+      </div>
+      <div class="mk">
+        <div class="mk-lbl"><i class="ti ti-user-check"></i> Actifs</div>
+        <div class="mk-val" id="kpi-actifs">0</div>
+      </div>
+      <div class="mk">
+        <div class="mk-lbl"><i class="ti ti-ban"></i> Bannis</div>
+        <div class="mk-val" id="kpi-bans">0</div>
+      </div>
+      <div class="mk">
+        <div class="mk-lbl"><i class="ti ti-user-question"></i> Sans niveau</div>
+        <div class="mk-val" id="kpi-nolvl">0</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-panel">
+      <div class="table-header">
+        <div class="table-title">
+          <i class="ti ti-list"></i> Liste des comptes
+          <span class="count-badge" id="user-count">0</span>
+        </div>
+        <div class="controls">
+          <div class="search-bar-adm">
+            <i class="ti ti-search"></i>
+            <input type="text" id="search-user" placeholder="Nom ou email..." oninput="renderUsers()">
+          </div>
+          <select class="filter-sel" id="filter-niveau" onchange="renderUsers()">
+            <option value="">Tout niveau</option>
+            <option value="college1">1ère année Collège</option>
+            <option value="college2">2ème année Collège</option>
+            <option value="college3">3ème année Collège</option>
+            <option value="tronc">Tronc commun</option>
+            <option value="bac1">1ère Bac</option>
+            <option value="bac2">2ème Bac</option>
+          </select>
+          <select class="filter-sel" id="filter-status" onchange="renderUsers()">
+            <option value="">Tout statut</option>
+            <option value="active">Actifs</option>
+            <option value="banned">Bannis</option>
+          </select>
+          <button class="btn-ntf" onclick="openNotifyModal()"><i class="ti ti-send"></i> Notifier</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Utilisateur</th>
+              <th>Niveau</th>
+              <th>Inscription</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal détail utilisateur -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-title"><i class="ti ti-user"></i> Détail du compte</div>
+    <div id="detail-body"></div>
+    <button class="btn-close" onclick="closeDetail()">Fermer</button>
+  </div>
+</div>
+
+<!-- Modal notification -->
+<div class="modal-overlay" id="notify-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title"><i class="ti ti-send"></i> Envoyer une notification</div>
+    <div style="padding:16px 0">
+      <div class="form-group">
+        <label>Titre</label>
+        <input class="form-control" id="ntf-title" placeholder="Ex: Nouveau contenu disponible">
+      </div>
+      <div class="form-group">
+        <label>Message</label>
+        <textarea class="form-control" id="ntf-message" rows="4" placeholder="Écrivez votre message..."></textarea>
+      </div>
+      <div id="ntf-status" style="font-size:0.85rem;margin-bottom:10px"></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn-close" onclick="closeNotifyModal()" style="flex:1">Annuler</button>
+      <button class="btn-save" onclick="sendNotification()" style="flex:2" id="ntf-btn"><i class="ti ti-send"></i> Envoyer à tous</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/admin.js?v=2"></script>
+<script src="../js/api.js?v=2"></script>
+<script>
+function toggleSidebar(){document.querySelector('.sidebar').classList.toggle('open');}
+document.addEventListener('click',function(e){var s=document.querySelector('.sidebar');if(s.classList.contains('open')&&!s.contains(e.target)&&!e.target.closest('.hamburger'))s.classList.remove('open');});
+requireAdmin();
+
+function renderKPIs() {
+  var users = getAllUsers();
+  document.getElementById('kpi-total').textContent  = users.length;
+  document.getElementById('kpi-actifs').textContent = users.filter(function(u){ return !u.banned; }).length;
+  document.getElementById('kpi-bans').textContent   = users.filter(function(u){ return u.banned; }).length;
+  document.getElementById('kpi-nolvl').textContent  = users.filter(function(u){ return !u.level; }).length;
+  document.getElementById('total-label').textContent = users.length + ' compte' + (users.length>1?'s':'') + ' inscrit' + (users.length>1?'s':'');
+}
+
+function renderUsers() {
+  var q   = (document.getElementById('search-user').value||'').toLowerCase();
+  var fn  = document.getElementById('filter-niveau').value;
+  var fs  = document.getElementById('filter-status').value;
+  var users = getAllUsers().filter(function(u){
+    var matchQ = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    var matchN = !fn || u.level===fn;
+    var matchS = !fs || (fs==='banned'?u.banned:!u.banned);
+    return matchQ && matchN && matchS;
+  });
+  document.getElementById('user-count').textContent = users.length;
+  var tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = '';
+
+  if(users.length===0) {
+    tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><i class="ti ti-users-off"></i><p>Aucun utilisateur trouvé</p></div></td></tr>';
+    return;
+  }
+
+  users.forEach(function(u){
+    var initials = u.name.split(' ').map(function(n){return n[0];}).join('').toUpperCase().substring(0,2);
+    var date     = u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '—';
+    var status   = u.banned ? '<span class="status-badge s-banned"><i class="ti ti-ban"></i> Banni</span>'
+                            : '<span class="status-badge s-active"><i class="ti ti-check"></i> Actif</span>';
+    var lvlLabel = u.level ? (NIVEAU_LABELS[u.level]||u.level) : '—';
+    var lvlPill  = u.level ? '<span class="level-pill">'+lvlLabel+'</span>' : '<span style="color:#333;font-size:0.75rem">Non défini</span>';
+    var banLabel = u.banned ? 'Réactiver' : 'Bannir';
+    var banClass = u.banned ? 'btn-ban is-banned' : 'btn-ban';
+    var banIcon  = u.banned ? 'ti-user-check' : 'ti-ban';
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><div class="user-cell"><div class="u-avatar">'+initials+'</div><div><div class="u-name">'+u.name+'</div><div class="u-email">'+u.email+'</div></div></div></td>'+
+      '<td>'+lvlPill+'</td>'+
+      '<td>'+date+'</td>'+
+      '<td>'+status+'</td>'+
+      '<td><div class="action-btns">'+
+        '<button class="btn-view" onclick="showDetail('+u.id+')"><i class="ti ti-eye"></i> Voir</button>'+
+        (u.email === 'admin@jacademy.ma' ? '' : '<button class="'+banClass+'" onclick="doBan('+u.id+')"><i class="ti '+banIcon+'"></i> '+banLabel+'</button>'+
+        '<button class="btn-del-u" onclick="doDelete('+u.id+')"><i class="ti ti-trash"></i></button>')+
+      '</div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function doBan(id) {
+  if (window.API) {
+    API.banUser(id).then(function() {
+      banUser(id);
+      renderKPIs();
+      renderUsers();
+    }).catch(function() {
+      alert('Erreur : impossible de modifier le statut sur le serveur');
+    });
+  } else {
+    banUser(id);
+    renderKPIs();
+    renderUsers();
+  }
+}
+
+function doDelete(id) {
+  var users = getAllUsers();
+  var u = users.find(function(u){ return u.id == id; });
+  if (u && confirm('Supprimer définitivement le compte de ' + u.name + ' ?')) {
+    if (window.API) {
+      API.deleteUser(id).then(function() {
+        deleteUser(id);
+        renderKPIs();
+        renderUsers();
+      }).catch(function() {
+        alert('Erreur : impossible de supprimer le compte sur le serveur');
+      });
+    } else {
+      deleteUser(id);
+      renderKPIs();
+      renderUsers();
+    }
+  }
+}
+
+function showDetail(id) {
+  var u = getAllUsers().find(function(u){ return u.id==id; });
+  if(!u) return;
+  var date = u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric'}) : '—';
+  document.getElementById('detail-body').innerHTML =
+    '<div class="detail-row"><span class="dr-label"><i class="ti ti-user"></i> Nom</span><span class="dr-val">'+u.name+'</span></div>'+
+    '<div class="detail-row"><span class="dr-label"><i class="ti ti-mail"></i> Email</span><span class="dr-val">'+u.email+'</span></div>'+
+    '<div class="detail-row"><span class="dr-label"><i class="ti ti-books"></i> Niveau</span><span class="dr-val">'+(NIVEAU_LABELS[u.level]||'Non défini')+'</span></div>'+
+    '<div class="detail-row"><span class="dr-label"><i class="ti ti-calendar"></i> Inscrit le</span><span class="dr-val">'+date+'</span></div>'+
+    '<div class="detail-row"><span class="dr-label"><i class="ti ti-shield"></i> Statut</span><span class="dr-val">'+(u.banned?'Banni':'Actif')+'</span></div>';
+  document.getElementById('detail-modal').classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+
+function openNotifyModal() {
+  document.getElementById('ntf-title').value = '';
+  document.getElementById('ntf-message').value = '';
+  document.getElementById('ntf-status').innerHTML = '';
+  document.getElementById('ntf-btn').disabled = false;
+  document.getElementById('ntf-btn').innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
+  document.getElementById('notify-modal').classList.add('open');
+}
+
+function closeNotifyModal() { document.getElementById('notify-modal').classList.remove('open'); }
+
+function sendNotification() {
+  var title = document.getElementById('ntf-title').value.trim();
+  var msg = document.getElementById('ntf-message').value.trim();
+  if (!title || !msg) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Titre et message requis</span>'; return; }
+  var btn = document.getElementById('ntf-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Envoi…';
+  document.getElementById('ntf-status').innerHTML = '';
+  if (!window.API) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Serveur hors ligne</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
+  API.login(ADMIN_EMAIL, ADMIN_PASSWORD).then(function(r) {
+    if (r && r.token) {
+      setToken(r.token);
+      API.sendNotification(title, msg).then(function(r2) {
+        if (r2 && r2.error) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">' + r2.error + '</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
+        document.getElementById('ntf-status').innerHTML = '<span style="color:#1a7a1a">✓ Notification envoyée à ' + (r2 ? r2.sent + '/' + r2.total : 'tous') + ' utilisateurs</span>';
+        btn.innerHTML = '<i class="ti ti-check"></i> Envoyé';
+        setTimeout(closeNotifyModal, 2000);
+      }).catch(function(e) {
+        document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Erreur : ' + (e.message||'serveur indisponible') + '</span>';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
+      });
+    } else {
+      document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Authentification admin échouée</span>';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
+    }
+  }).catch(function() {
+    document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Impossible de se connecter au serveur</span>';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
+  });
+}
+
+function syncUsers() {
+  if (!window.API) return;
+  API.getUsers().then(function(list) {
+    if (list && list.length) {
+      localStorage.setItem('jacademy_users', JSON.stringify(list));
+      renderKPIs();
+      renderUsers();
+    }
+  }).catch(function(){});
+}
+syncUsers();
+</script>
+</body>
+</html>

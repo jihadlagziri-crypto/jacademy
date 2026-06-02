@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J-Academy — Matières</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    body { background: var(--gray-light); min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #0A0A0A; border-bottom: 1px solid #1e1e1e;
+      padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
+      height: 62px; position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo { display: flex; align-items: center; gap: 10px; }
+    .logo-img { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; }    .logo-txt  { font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: #fff; letter-spacing: 0.05em; }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: #1a1a1a; border-radius: 20px; padding: 5px 14px 5px 5px;
+      border: 1px solid #2a2a2a;
+    }
+    .user-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #fff; color: #111;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; font-family: var(--font-head);
+    }
+    .user-name { font-size: 0.82rem; font-weight: 500; color: #bbb; }
+    .btn-logout {
+      background: none; border: 1px solid #2a2a2a; color: #666;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      font-size: 0.78rem; cursor: pointer;
+      display: flex; align-items: center; gap: 5px;
+      transition: all 0.2s; font-family: var(--font-body);
+    }
+    .btn-logout:hover { border-color: #C0392B; color: #C0392B; background: rgba(192,57,43,0.05); }
+
+    /* ── Banner ── */
+    .level-banner {
+      background: #111; color: #fff;
+      padding: 22px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid #1e1e1e;
+    }
+    .level-banner h2 { font-size: 1.05rem; font-family: var(--font-head); font-weight: 600; }
+    .level-banner p  { font-size: 0.8rem; color: #666; margin-top: 3px; }
+    .level-pill {
+      background: #fff; color: #111;
+      padding: 6px 16px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
+      font-family: var(--font-head);
+    }
+
+    /* ── Main ── */
+    .main { padding: 28px 32px; }
+
+    .page-heading {
+      margin-bottom: 24px;
+    }
+    .page-heading h2 {
+      font-family: var(--font-head); font-size: 1.25rem; font-weight: 600;
+      color: var(--dark); margin-bottom: 4px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .page-heading p { font-size: 0.85rem; color: var(--gray); }
+
+    /* Barre de recherche */
+    .search-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: #fff; border: 1.5px solid var(--gray-border);
+      border-radius: var(--radius-md); padding: 10px 16px;
+      margin-bottom: 24px; transition: border-color 0.2s;
+    }
+    .search-bar:focus-within { border-color: #111; }
+    .search-bar i { color: #aaa; font-size: 1.05rem; }
+    .search-bar input {
+      border: none; outline: none; font-size: 0.9rem;
+      background: transparent; flex: 1; color: var(--dark); font-family: var(--font-body);
+    }
+    .search-bar input::placeholder { color: #ccc; }
+
+    /* ── Grille matières ── */
+    .matieres-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    /* Carte matière avec animation couleur au hover */
+    .mat-card {
+      background: #fff;
+      border-radius: var(--border-radius, 14px);
+      border: 1.5px solid #e8e8e8;
+      padding: 24px 18px 20px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: block;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
+
+    /* Fond coloré qui monte au hover */
+    .mat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--card-color, #111);
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 0;
+    }
+    .mat-card:hover::before { transform: translateY(0); }
+
+    .mat-card:hover {
+      border-color: var(--card-color, #111);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    }
+
+    /* Tout le contenu doit passer devant le fond */
+    .mat-card > * { position: relative; z-index: 1; }
+
+    .mat-icon-wrap {
+      width: 56px; height: 56px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 14px;
+      background: var(--card-bg, #f0f0f0);
+      transition: background 0.3s ease;
+    }
+    .mat-card:hover .mat-icon-wrap { background: rgba(255,255,255,0.2); }
+
+    .mat-icon-wrap i {
+      font-size: 1.5rem;
+      color: var(--card-color, #111);
+      transition: color 0.3s ease;
+    }
+    .mat-card:hover .mat-icon-wrap i { color: #fff; }
+
+    .mat-name {
+      font-family: var(--font-head); font-size: 0.95rem; font-weight: 600;
+      color: var(--dark); margin-bottom: 4px;
+      transition: color 0.3s ease;
+    }
+    .mat-card:hover .mat-name { color: #fff; }
+
+    .mat-meta {
+      font-size: 0.75rem; color: var(--gray);
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: color 0.3s ease;
+    }
+    .mat-card:hover .mat-meta { color: rgba(255,255,255,0.75); }
+    .mat-meta i { font-size: 0.8rem; }
+
+    .mat-progress { margin-top: 14px; }
+    .mat-progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 0.7rem; color: var(--gray); margin-bottom: 5px;
+      transition: color 0.3s ease;
+    }
+    .mat-card:hover .mat-progress-label { color: rgba(255,255,255,0.6); }
+    .prog-bar-bg { background: #eee; border-radius: 20px; height: 4px; transition: background 0.3s ease; }
+    .mat-card:hover .prog-bar-bg { background: rgba(255,255,255,0.2); }
+    .prog-bar-fill { height: 100%; border-radius: 20px; background: var(--card-color, #111); transition: background 0.3s ease; }
+    .mat-card:hover .prog-bar-fill { background: #fff; }
+
+    /* Badge "nouveau" */
+    .mat-badge {
+      position: absolute; top: 12px; right: 12px;
+      background: #111; color: #fff;
+      font-size: 0.65rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      transition: background 0.3s, color 0.3s;
+    }
+    .mat-card:hover .mat-badge { background: rgba(255,255,255,0.25); color: #fff; }
+
+    /* Message aucun résultat */
+    .no-result {
+      text-align: center; padding: 40px; color: var(--gray);
+      font-size: 0.9rem; display: none;
+    }
+    .no-result i { font-size: 2rem; display: block; margin-bottom: 10px; }
+
+    @media (max-width: 768px) {
+      .topbar { padding: 0 16px; height: 54px; }
+      .level-banner { padding: 16px; flex-direction: column; align-items: flex-start; gap: 10px; }
+      .level-banner h2 { font-size: 0.95rem; }
+      .main { padding: 16px; }
+      .matieres-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+      .search-bar { padding: 8px 12px; margin-bottom: 16px; }
+      .btn-logout { padding: 5px 10px; font-size: 0.72rem; }
+      .user-chip { padding: 4px 10px 4px 4px; }
+      .user-name { display: none; }
+    }
+    @media (max-width: 480px) {
+      .topbar { height: 48px; padding: 0 10px; }
+      .main { padding: 12px; }
+      .matieres-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .mat-card { padding: 16px 12px; }
+      .mat-icon-wrap { width: 44px; height: 44px; font-size: 1.1rem; margin-bottom: 10px; }
+      .mat-icon-wrap i { font-size: 1.2rem; }
+      .mat-name { font-size: 0.82rem; }
+      .mat-meta { font-size: 0.68rem; }
+      .mat-progress { margin-top: 10px; }
+      .mat-progress-label { font-size: 0.65rem; }
+      .level-banner h2 { font-size: 0.88rem; }
+      .level-banner p { font-size: 0.72rem; }
+      .level-pill { font-size: 0.72rem; padding: 4px 12px; }
+      .topbar-logo .logo-txt { font-size: 0.85rem; }
+      .search-bar input { font-size: 0.82rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<nav class="topbar">
+  <div class="topbar-logo">
+    <img src="../logo.png" alt="J-Academy" class="logo-img">
+    <div class="logo-txt">J-Academy</div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div class="user-avatar" id="user-initials">??</div>
+      <div class="user-name" id="user-name">...</div>
+    </div>
+    <button class="btn-logout" onclick="logout()"><i class="ti ti-logout"></i> Déconnexion</button>
+  </div>
+</nav>
+
+<!-- Banner niveau -->
+<div class="level-banner">
+  <div>
+    <h2>Tes matières — <span id="banner-level">...</span></h2>
+    <p>Choisis une matière pour accéder aux cours, PDF et quiz</p>
+  </div>
+  <div class="level-pill" id="banner-pill"><i class="ti ti-books"></i> ...</div>
+</div>
+
+<!-- Contenu principal -->
+<div class="main">
+
+  <div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" placeholder="Rechercher une matière..." id="search-input" oninput="filterMatieres()">
+  </div>
+
+  <div class="page-heading">
+    <h2><i class="ti ti-layout-grid" style="font-size:1.1rem"></i> Choisir une matière</h2>
+    <p>Clique sur une matière pour accéder aux vidéos, PDF et exercices</p>
+  </div>
+
+  <div class="matieres-grid" id="matieres-grid"></div>
+  <div class="no-result" id="no-result">
+    <i class="ti ti-search-off"></i>
+    Aucune matière trouvée pour "<span id="no-result-q"></span>"
+  </div>
+
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  var MATIERES = {
+    college: [
+      { key:'maths',    name:'Mathématiques',  icon:'ti-math',          color:'#1A56DB', bg:'#EBF0FF', lessons:20, pdfs:10, prog:0 },
+      { key:'francais', name:'Français',        icon:'ti-book',          color:'#C81E1E', bg:'#FDE8E8', lessons:16, pdfs:8,  prog:0 },
+      { key:'anglais',  name:'Anglais',         icon:'ti-world',         color:'#057A55', bg:'#DEF7EC', lessons:14, pdfs:6,  prog:0 },
+      { key:'svt',      name:'SVT',             icon:'ti-leaf',          color:'#14532D', bg:'#DCFCE7', lessons:12, pdfs:6,  prog:0 },
+      { key:'physique', name:'Physique-Chimie', icon:'ti-flask',         color:'#92400E', bg:'#FEF3C7', lessons:10, pdfs:5,  prog:0 },
+      { key:'histoire', name:'Histoire-Géo',    icon:'ti-map',           color:'#5B21B6', bg:'#EDE9FE', lessons:8,  pdfs:4,  prog:0 },
+    ],
+    tronc: [
+      { key:'maths',       name:'Mathématiques',  icon:'ti-math',         color:'#1A56DB', bg:'#EBF0FF', lessons:24, pdfs:12, prog:0 },
+      { key:'physique',    name:'Physique-Chimie', icon:'ti-flask',        color:'#92400E', bg:'#FEF3C7', lessons:18, pdfs:9,  prog:0 },
+      { key:'svt',         name:'SVT',             icon:'ti-leaf',         color:'#14532D', bg:'#DCFCE7', lessons:16, pdfs:8,  prog:0 },
+      { key:'francais',    name:'Français',        icon:'ti-book',         color:'#C81E1E', bg:'#FDE8E8', lessons:14, pdfs:7,  prog:0 },
+      { key:'anglais',     name:'Anglais',         icon:'ti-world',        color:'#057A55', bg:'#DEF7EC', lessons:12, pdfs:5,  prog:0 },
+      { key:'histoire',    name:'Histoire-Géo',    icon:'ti-map',          color:'#5B21B6', bg:'#EDE9FE', lessons:10, pdfs:5,  prog:0 },
+      { key:'informatique',name:'Informatique',    icon:'ti-device-laptop',color:'#374151', bg:'#F3F4F6', lessons:8,  pdfs:4,  prog:0, badge:'Nouveau' },
+    ],
+    bac1: [
+      { key:'maths',    name:'Mathématiques',  icon:'ti-math',          color:'#1A56DB', bg:'#EBF0FF', lessons:28, pdfs:14, prog:0 },
+      { key:'physique', name:'Physique-Chimie', icon:'ti-flask',        color:'#92400E', bg:'#FEF3C7', lessons:22, pdfs:11, prog:0 },
+      { key:'svt',      name:'SVT',             icon:'ti-leaf',         color:'#14532D', bg:'#DCFCE7', lessons:18, pdfs:9,  prog:0 },
+      { key:'anglais',  name:'Anglais',         icon:'ti-world',        color:'#057A55', bg:'#DEF7EC', lessons:12, pdfs:5,  prog:0 },
+      { key:'philo',    name:'Philosophie',     icon:'ti-brain',        color:'#9D174D', bg:'#FCE7F3', lessons:10, pdfs:5,  prog:0 },
+    ],
+    bac2: [
+      { key:'maths',    name:'Mathématiques',  icon:'ti-math',          color:'#1A56DB', bg:'#EBF0FF', lessons:32, pdfs:16, prog:0 },
+      { key:'physique', name:'Physique-Chimie', icon:'ti-flask',        color:'#92400E', bg:'#FEF3C7', lessons:26, pdfs:13, prog:0 },
+      { key:'svt',      name:'SVT',             icon:'ti-leaf',         color:'#14532D', bg:'#DCFCE7', lessons:20, pdfs:10, prog:0 },
+      { key:'anglais',  name:'Anglais',         icon:'ti-world',        color:'#057A55', bg:'#DEF7EC', lessons:14, pdfs:6,  prog:0 },
+      { key:'philo',    name:'Philosophie',     icon:'ti-brain',        color:'#9D174D', bg:'#FCE7F3', lessons:12, pdfs:6,  prog:0 },
+      { key:'info',     name:'Informatique',    icon:'ti-device-laptop',color:'#374151', bg:'#F3F4F6', lessons:10, pdfs:4,  prog:0 },
+    ]
+  };
+
+  var LEVEL_LABELS = { college:'Collège', tronc:'Tronc commun', bac1:'1ère Bac', bac2:'2ème Bac' };
+  var allMatieres = [];
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var session = getSession();
+    if (!session) { window.location.href = '../index.html'; return; }
+    if (!session.level) { window.location.href = 'niveau.html'; return; }
+
+    var initials = session.name.split(' ').map(function(n){ return n[0]; }).join('').toUpperCase().substring(0,2);
+    document.getElementById('user-initials').textContent = initials;
+    document.getElementById('user-name').textContent = session.name.split(' ')[0];
+
+    var label = LEVEL_LABELS[session.level] || session.level;
+    document.getElementById('banner-level').textContent = label;
+    document.getElementById('banner-pill').innerHTML = '<i class="ti ti-books"></i> ' + label;
+
+    allMatieres = MATIERES[session.level] || MATIERES['tronc'];
+    renderMatieres(allMatieres);
+  });
+
+  function renderMatieres(list) {
+    var grid    = document.getElementById('matieres-grid');
+    var noRes   = document.getElementById('no-result');
+    grid.innerHTML = '';
+
+    if (list.length === 0) {
+      grid.style.display = 'none';
+      noRes.style.display = 'block';
+      document.getElementById('no-result-q').textContent = document.getElementById('search-input').value;
+      return;
+    }
+    grid.style.display = 'grid';
+    noRes.style.display = 'none';
+
+    list.forEach(function(m, idx) {
+      var card = document.createElement('a');
+      card.className = 'mat-card fade-up';
+      card.href = 'contenu.html?module=' + m.key + '&name=' + encodeURIComponent(m.name);
+      card.style.setProperty('--card-color', m.color);
+      card.style.setProperty('--card-bg',    m.bg);
+      card.style.animationDelay = (idx * 0.05) + 's';
+
+      var badgeHtml = m.badge
+        ? '<div class="mat-badge">' + m.badge + '</div>'
+        : '';
+
+      card.innerHTML =
+        badgeHtml +
+        '<div class="mat-icon-wrap"><i class="ti ' + m.icon + '"></i></div>' +
+        '<div class="mat-name">'  + m.name + '</div>' +
+        '<div class="mat-meta"><i class="ti ti-video"></i>' + m.lessons + ' vidéos &nbsp;·&nbsp; <i class="ti ti-file-text"></i> ' + m.pdfs + ' PDF</div>' +
+        '<div class="mat-progress">' +
+          '<div class="mat-progress-label"><span>Progression</span><span>' + m.prog + '%</span></div>' +
+          '<div class="prog-bar-bg"><div class="prog-bar-fill" style="width:' + m.prog + '%"></div></div>' +
+        '</div>';
+
+      grid.appendChild(card);
+    });
+  }
+
+  function filterMatieres() {
+    var q = document.getElementById('search-input').value.toLowerCase().trim();
+    if (!q) { renderMatieres(allMatieres); return; }
+    renderMatieres(allMatieres.filter(function(m){ return m.name.toLowerCase().includes(q); }));
+  }
+</script>
+</body>
+</html>

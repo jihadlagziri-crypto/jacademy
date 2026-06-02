@@ -1,0 +1,8 @@
+{
+  "host": "smtp.gmail.com",
+  "port": 587,
+  "secure": false,
+  "user": "votre.email@gmail.com",
+  "pass": "votre-mot-de-passe-app-gmail",
+  "from": "J-Academy <votre.email@gmail.com>"
+}

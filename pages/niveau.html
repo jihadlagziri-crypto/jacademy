@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>J-Academy — Choix du niveau</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    body {
+      min-height: 100vh; background: var(--gray-light);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 32px 20px;
+    }
+    .page-header { text-align: center; margin-bottom: 36px; }
+    .step-indicator {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #111; color: #fff;
+      padding: 6px 14px; border-radius: 20px;
+      font-size: 0.78rem; font-weight: 600; margin-bottom: 16px;
+      font-family: var(--font-head);
+    }
+    .page-header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    .page-header p { color: var(--gray); font-size: 0.95rem; }
+
+    .level-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 16px; width: 100%; max-width: 580px;
+    }
+    .level-card {
+      background: var(--white); border-radius: var(--radius-lg);
+      border: 2px solid var(--gray-border);
+      padding: 24px 20px; cursor: pointer;
+      transition: var(--transition); position: relative; overflow: hidden;
+    }
+    .level-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: #111; transform: scaleX(0);
+      transition: transform 0.3s ease; transform-origin: left;
+    }
+    .level-card:hover { border-color: #111; transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .level-card:hover::before { transform: scaleX(1); }
+    .level-card.selected { border-color: #111; background: #F5F5F5; }
+    .level-card.selected::before { transform: scaleX(1); }
+
+    .level-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: #F0F0F0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; margin-bottom: 14px; color: #111;
+    }
+    .level-name { font-family: var(--font-head); font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+    .level-sub  { font-size: 0.8rem; color: var(--gray); margin-bottom: 10px; }
+    .level-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .level-tag  { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: var(--gray-light); color: var(--gray); border: 1px solid var(--gray-border); }
+
+    .check-mark {
+      position: absolute; top: 14px; right: 14px;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: #111; color: #fff;
+      display: none; align-items: center; justify-content: center; font-size: 0.85rem;
+    }
+    .level-card.selected .check-mark { display: flex; }
+
+    .action-wrap { width: 100%; max-width: 580px; margin-top: 24px; }
+    .btn-continue {
+      width: 100%; padding: 14px; border-radius: var(--radius-md);
+      background: #111; color: #fff; border: none;
+      font-size: 1rem; font-weight: 600; font-family: var(--font-head);
+      cursor: pointer; transition: var(--transition);
+      opacity: 0.35; pointer-events: none;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-continue.ready { opacity: 1; pointer-events: auto; }
+    .btn-continue.ready:hover { background: #333; transform: translateY(-1px); }
+
+    .logo-top {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .logo-img { width: 34px; height: 34px; object-fit: contain; border-radius: 6px; }
+    .logo-txt  { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--dark); }
+
+    @media (max-width: 560px) {
+      body { padding: 20px 14px; }
+      .page-header { margin-bottom: 24px; }
+      .page-header h1 { font-size: 1.3rem; }
+      .level-grid { grid-template-columns: 1fr; gap: 12px; max-width: 400px; }
+      .level-card { padding: 18px 16px; }
+      .level-icon { width: 40px; height: 40px; font-size: 1.2rem; margin-bottom: 10px; }
+      .level-name { font-size: 0.95rem; }
+      .action-wrap { margin-top: 18px; }
+      .btn-continue { padding: 12px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo-top fade-up">
+  <img src="../logo.png" alt="J-Academy" class="logo-img">
+  <div class="logo-txt">J-Academy</div>
+</div>
+
+<div class="page-header fade-up">
+  <div class="step-indicator"><i class="ti ti-stack-2"></i> Étape 2 sur 3</div>
+  <h1>Quel est ton niveau scolaire ?</h1>
+  <p>On adaptera tous les cours et modules à ton niveau.</p>
+</div>
+
+<div class="level-grid fade-up delay-1">
+
+  <div class="level-card" onclick="selectLevel(this, 'college1')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-school"></i></div>
+    <div class="level-name">1ère année Collège</div>
+    <div class="level-sub">1ère AC</div>
+    <div class="level-tags">
+      <span class="level-tag">Maths</span>
+      <span class="level-tag">Français</span>
+      <span class="level-tag">Anglais</span>
+      <span class="level-tag">SVT</span>
+    </div>
+  </div>
+
+  <div class="level-card" onclick="selectLevel(this, 'college2')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-school"></i></div>
+    <div class="level-name">2ème année Collège</div>
+    <div class="level-sub">2ème AC</div>
+    <div class="level-tags">
+      <span class="level-tag">Maths</span>
+      <span class="level-tag">Français</span>
+      <span class="level-tag">Anglais</span>
+      <span class="level-tag">SVT</span>
+    </div>
+  </div>
+
+  <div class="level-card" onclick="selectLevel(this, 'college3')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-school"></i></div>
+    <div class="level-name">3ème année Collège</div>
+    <div class="level-sub">3ème AC</div>
+    <div class="level-tags">
+      <span class="level-tag">Maths</span>
+      <span class="level-tag">Français</span>
+      <span class="level-tag">Anglais</span>
+      <span class="level-tag">SVT</span>
+    </div>
+  </div>
+
+  <div class="level-card" onclick="selectLevel(this, 'tronc')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-book"></i></div>
+    <div class="level-name">Tronc commun</div>
+    <div class="level-sub">1ère année lycée</div>
+    <div class="level-tags">
+      <span class="level-tag">Maths</span>
+      <span class="level-tag">Physique</span>
+      <span class="level-tag">SVT</span>
+      <span class="level-tag">Histoire</span>
+    </div>
+  </div>
+
+  <div class="level-card" onclick="selectLevel(this, 'bac1')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-certificate"></i></div>
+    <div class="level-name">1ère Bac</div>
+    <div class="level-sub">2ème année lycée</div>
+    <div class="level-tags">
+      <span class="level-tag">Analyse</span>
+      <span class="level-tag">Algèbre</span>
+      <span class="level-tag">Physique</span>
+      <span class="level-tag">Chimie</span>
+    </div>
+  </div>
+
+  <div class="level-card" onclick="selectLevel(this, 'bac2')">
+    <div class="check-mark"><i class="ti ti-check" style="font-size:14px"></i></div>
+    <div class="level-icon"><i class="ti ti-award"></i></div>
+    <div class="level-name">2ème Bac</div>
+    <div class="level-sub">Terminale — Examen national</div>
+    <div class="level-tags">
+      <span class="level-tag">Intégrales</span>
+      <span class="level-tag">Probabilités</span>
+      <span class="level-tag">Mécanique</span>
+      <span class="level-tag">Thermo</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="action-wrap fade-up delay-2">
+  <button class="btn-continue" id="btn-continue" onclick="continuer()">
+    Continuer vers les modules <i class="ti ti-arrow-right"></i>
+  </button>
+</div>
+
+<script src="../js/api.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  var selectedLevelKey = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var session = getSession();
+    if (!session) { window.location.href = '../index.html'; }
+  });
+
+  function selectLevel(card, key) {
+    document.querySelectorAll('.level-card').forEach(function(c) { c.classList.remove('selected'); });
+    card.classList.add('selected');
+    selectedLevelKey = key;
+    var btn = document.getElementById('btn-continue');
+    btn.classList.add('ready');
+  }
+
+  function continuer() {
+    if (!selectedLevelKey) return;
+    var session = getSession();
+    if (!session) return;
+    session.level = selectedLevelKey;
+    setSession(session);
+    var users = getUsers();
+    var idx = users.findIndex(function(u) { return u.id === session.id || u.email === session.email; });
+    if (idx !== -1) {
+      users[idx].level = selectedLevelKey;
+      saveUsers(users);
+    }
+    if (window.API) API.setLevel(selectedLevelKey).catch(function(){});
+    window.location.href = 'modules.html';
+  }
+</script>
+</body>
+</html>

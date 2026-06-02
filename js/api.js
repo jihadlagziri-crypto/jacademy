@@ -1,4 +1,4 @@
-var API_BASE = 'http://localhost:3001/api';
+var API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3001/api' : '/api';
 var TOKEN_KEY = 'jacademy_token';
 
 function getToken() { return localStorage.getItem(TOKEN_KEY); }

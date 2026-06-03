@@ -357,7 +357,8 @@ if (window.API) {
     if (s && s.enabled) {
       document.getElementById('mail-status').innerHTML = 
         '<div class="act-item"><div class="act-dot" style="background:#1D9E75"></div><div><div class="act-msg">Configuration active</div><div class="act-time">Serveur : '+(s.host||'Gmail')+' · Compte : '+(s.user||'—')+'</div></div></div>'+
-        '<div class="act-item"><div class="act-dot" style="background:#185FA5"></div><div><div class="act-msg">Notifications activées</div><div class="act-time">Envoi admin et bienvenue automatique</div></div></div>';
+        '<div class="act-item"><div class="act-dot" style="background:#185FA5"></div><div><div class="act-msg">Notifications activées</div><div class="act-time">Envoi admin et bienvenue automatique</div></div></div>'+
+        '<div style="margin-top:10px;text-align:center"><button onclick="testMail()" class="btn-save" style="padding:6px 14px;font-size:0.8rem"><i class="ti ti-send"></i> Tester email</button></div>';
     } else {
       document.getElementById('mail-status').innerHTML = 
         '<div class="act-item"><div class="act-dot" style="background:#BA7517"></div><div><div class="act-msg">Email non configuré</div><div class="act-time">Créer server/mail-config.json pour activer</div></div></div>';
@@ -369,6 +370,25 @@ if (window.API) {
 } else {
   document.getElementById('mail-status').innerHTML = 
     '<div class="act-item"><div class="act-dot" style="background:#C0392B"></div><div><div class="act-msg">Serveur hors ligne</div><div class="act-time">Les notifications sont désactivées</div></div></div>';
+}
+
+// ── Test email ──
+function testMail() {
+  var email = prompt('Adresse email pour recevoir le test :');
+  if (!email) return;
+  var btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Envoi…';
+  API.mailTest(email).then(function(r) {
+    if (r && r.sent) { alert('✓ Email de test envoyé à ' + email + ' — vérifiez votre boîte (et les spams)'); }
+    else { alert('Échec : ' + (r && r.reason || 'erreur inconnue')); }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Tester email';
+  }).catch(function(e) {
+    alert('Erreur : ' + (e.message || 'serveur indisponible'));
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Tester email';
+  });
 }
 
 // ── Export / Import JSON ──

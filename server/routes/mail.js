@@ -52,6 +52,18 @@ router.post('/send', async (req, res) => {
   }
 });
 
+router.post('/test', async (req, res) => {
+  try {
+    if (!mail.enabled) return res.status(400).json({ error: 'Mail non configuré' });
+    var { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email requis' });
+    var r = await sendMail(email, 'Test J-Academy', '<h1>Test</h1><p>Cet email confirme que la configuration SMTP fonctionne correctement.</p>');
+    res.json(r);
+  } catch (e) {
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 router.post('/welcome', async (req, res) => {
   try {
     var { email, name } = req.body;

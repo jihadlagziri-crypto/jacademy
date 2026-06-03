@@ -106,5 +106,8 @@ var API = {
   },
   getMailStatus: function() {
     return api('/mail/status');
+  },
+  mailTest: function(email) {
+    return api('/mail/test', { method: 'POST', body: { email: email } });
   }
 };

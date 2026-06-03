@@ -200,6 +200,9 @@
     <div class="topbar-right">
       <div style="font-size:0.75rem;color:#444" id="last-update"></div>
       <button class="tb-btn" id="sync-btn" onclick="syncToServer()"><i class="ti ti-cloud-upload"></i> Synchroniser</button>
+      <button class="tb-btn" onclick="exportData()"><i class="ti ti-download"></i> Exporter</button>
+      <button class="tb-btn" onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"></i> Importer</button>
+      <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
       <button class="tb-btn" onclick="location.reload()"><i class="ti ti-refresh"></i> Actualiser</button>
     </div>
   </div>
@@ -366,6 +369,52 @@ if (window.API) {
 } else {
   document.getElementById('mail-status').innerHTML = 
     '<div class="act-item"><div class="act-dot" style="background:#C0392B"></div><div><div class="act-msg">Serveur hors ligne</div><div class="act-time">Les notifications sont désactivées</div></div></div>';
+}
+
+// ── Export / Import JSON ──
+function exportData() {
+  var data = { content: getContent(), users: getAllUsers(), exportedAt: new Date().toISOString() };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'jacademy-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (!data || !data.content) { alert('Fichier JSON invalide'); return; }
+      if (!window.API) { alert('Serveur hors ligne'); return; }
+      var btn = document.getElementById('sync-btn');
+      btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Import...';
+      API.seedContent(data.content).then(function(r) {
+        var msg = 'Contenus : ' + (r.seeded || 0) + ' ajoutés';
+        if (data.users && data.users.length) {
+          var clean = data.users.filter(function(u) { return u.email !== ADMIN_EMAIL; }).map(function(u) {
+            try { return { name: u.name, email: u.email, password: atob(u.password), level: u.level, banned: u.banned, createdAt: u.createdAt }; }
+            catch(e) { return { name: u.name, email: u.email, password: 'JAcademy2025!', level: u.level, banned: u.banned, createdAt: u.createdAt }; }
+          });
+          return API.seedUsers(clean).then(function(r2) { msg += '\nUtilisateurs : ' + (r2.seeded || 0) + ' ajoutés'; return msg; });
+        }
+        return msg;
+      }).then(function(msg) {
+        alert('Import terminé !\n' + msg + '\n\nActualise la page.');
+        btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Synchroniser'; btn.disabled = false;
+        location.reload();
+      }).catch(function(err) {
+        btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Synchroniser'; btn.disabled = false;
+        alert('Erreur import : ' + (err.message || 'serveur'));
+      });
+    } catch(err) { alert('Fichier invalide : ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
 }
 
 // ── Sync localStorage → serveur ──

@@ -26,21 +26,14 @@ router.post('/send', async (req, res) => {
 
     var users = rows[0].values.filter(function(u){ return u[2]; });
     var emailData = notificationEmail(title, message);
-    var sent = 0;
-    // Send to first user only (to avoid timeout with many users)
-    var u = users[0];
-    if (u && u[2]) {
-      var r = await sendMail(u[2], emailData.subject, emailData.html);
-      if (r && r.sent) sent++;
-    }
-    // Send to rest in background (non-blocking)
-    for (var i = 1; i < users.length; i++) {
-      var u2 = users[i];
-      if (!u2 || !u2[2]) continue;
-      sendMail(u2[2], emailData.subject, emailData.html).then(function(r2) {}).catch(function(){});
+    // Fire all emails in background — respond immediately
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      if (!u || !u[2]) continue;
+      sendMail(u[2], emailData.subject, emailData.html).then(function(){}).catch(function(){});
     }
     await db.run('INSERT INTO activity (message, type) VALUES (?, ?)', ['Notification envoyée à ' + users.length + ' utilisateur(s) : ' + title, 'mail']);
-    res.json({ sent: sent > 0 ? 1 : 0, total: users.length });
+    res.json({ sent: 0, total: users.length, status: 'envoi_en_cours' });
   } catch (e) {
     res.status(500).json({ error: 'Erreur serveur' });
   }

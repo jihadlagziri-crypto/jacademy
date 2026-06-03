@@ -36,7 +36,10 @@ async function sendMail(to, subject, html) {
         cid: 'logo'
       });
     }
-    await t.sendMail({ from: mail.from || mail.user, to, subject, html, attachments });
+    await Promise.race([
+      t.sendMail({ from: mail.from || mail.user, to, subject, html, attachments }),
+      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('Timeout SMTP (8s)')); }, 8000); })
+    ]);
     return { sent: true };
   } catch (e) {
     return { sent: false, reason: e.message };

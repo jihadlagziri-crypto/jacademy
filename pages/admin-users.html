@@ -405,19 +405,25 @@ function sendNotification() {
   btn.innerHTML = '<i class="ti ti-loader"></i> Envoi…';
   document.getElementById('ntf-status').innerHTML = '';
   if (!window.API) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Serveur hors ligne</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
+  var doSend = function() {
+    API.sendNotification(title, msg).then(function(r2) {
+      if (r2 && r2.error) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">' + r2.error + '</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
+      document.getElementById('ntf-status').innerHTML = '<span style="color:#1a7a1a">✓ Envoi en cours à ' + (r2 ? r2.total : 'tous') + ' utilisateur(s)</span>';
+      btn.innerHTML = '<i class="ti ti-check"></i> Envoyé';
+      setTimeout(closeNotifyModal, 2000);
+    }).catch(function(e) {
+      document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Erreur : ' + (e.message||'serveur indisponible') + '</span>';
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
+    });
+  };
+  // Check if already logged in before making a login call
+  var tok = getToken();
+  if (tok) { doSend(); return; }
   API.login(ADMIN_EMAIL, ADMIN_PASSWORD).then(function(r) {
     if (r && r.token) {
       setToken(r.token);
-      API.sendNotification(title, msg).then(function(r2) {
-        if (r2 && r2.error) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">' + r2.error + '</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
-        document.getElementById('ntf-status').innerHTML = '<span style="color:#1a7a1a">✓ Notification envoyée à ' + (r2 ? r2.sent + '/' + r2.total : 'tous') + ' utilisateurs</span>';
-        btn.innerHTML = '<i class="ti ti-check"></i> Envoyé';
-        setTimeout(closeNotifyModal, 2000);
-      }).catch(function(e) {
-        document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Erreur : ' + (e.message||'serveur indisponible') + '</span>';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous';
-      });
+      doSend();
     } else {
       document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">Authentification admin échouée</span>';
       btn.disabled = false;

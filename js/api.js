@@ -11,7 +11,7 @@ function api(path, options) {
   var token = getToken();
   if (token) headers['Authorization'] = token;
   var controller = new AbortController();
-  var timeout = setTimeout(function(){ controller.abort(); }, 15000);
+  var timeout = setTimeout(function(){ controller.abort(); }, 25000);
   var opts = { method: options.method || 'GET', headers: headers, signal: controller.signal };
   if (options.formData) {
     delete headers['Content-Type'];

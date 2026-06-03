@@ -10,20 +10,23 @@ function api(path, options) {
   headers['Content-Type'] = headers['Content-Type'] || 'application/json';
   var token = getToken();
   if (token) headers['Authorization'] = token;
+  var controller = new AbortController();
+  var timeout = setTimeout(function(){ controller.abort(); }, 15000);
+  var opts = { method: options.method || 'GET', headers: headers, signal: controller.signal };
   if (options.formData) {
     delete headers['Content-Type'];
-    return fetch(API_BASE + path, { method: options.method || 'GET', headers: headers, body: options.formData }).then(function(r) {
-      if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'Erreur serveur'); });
-      return r.json();
-    });
+    opts.body = options.formData;
+  } else if (options.body) {
+    opts.body = JSON.stringify(options.body);
   }
-  return fetch(API_BASE + path, {
-    method: options.method || 'GET',
-    headers: headers,
-    body: options.body ? JSON.stringify(options.body) : undefined
-  }).then(function(r) {
+  return fetch(API_BASE + path, opts).then(function(r) {
+    clearTimeout(timeout);
     if (!r.ok) return r.json().then(function(e) { throw new Error(e.error || 'Erreur serveur'); });
     return r.json();
+  }).catch(function(e) {
+    clearTimeout(timeout);
+    if (e.name === 'AbortError') throw new Error('Le serveur ne répond pas (timeout)');
+    throw e;
   });
 }
 

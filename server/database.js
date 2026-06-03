@@ -10,13 +10,20 @@ var rawSqlite = null; // keep reference to raw sql.js DB for saveDb
 
 async function getDb() {
   if (db) return db;
-  if (process.env.DATABASE_URL) return getPgDb();
+  if (process.env.DATABASE_URL) {
+    try {
+      return await getPgDb();
+    } catch(e) {
+      console.error('PostgreSQL failed (' + e.message + '), falling back to SQLite');
+      // fall through to SQLite
+    }
+  }
   return getSqliteDb();
 }
 
 async function getPgDb() {
   const { Pool } = require('pg');
-  pgPool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  pgPool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 5000, idleTimeoutMillis: 10000 });
   usingPg = true;
 
   await pgPool.query(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, level TEXT, banned INTEGER DEFAULT 0, createdat TEXT DEFAULT to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))`);

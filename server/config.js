@@ -5,9 +5,8 @@ var mailConfig = { enabled: false };
 
 // Priorité 1 : variables d'environnement (Render)
 if (process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS) {
-  var host = process.env.MAIL_HOST;
   mailConfig = {
-    host: host,
+    host: process.env.MAIL_HOST,
     port: parseInt(process.env.MAIL_PORT || '587'),
     secure: process.env.MAIL_SECURE === 'true',
     user: process.env.MAIL_USER,
@@ -15,7 +14,6 @@ if (process.env.MAIL_HOST && process.env.MAIL_USER && process.env.MAIL_PASS) {
     from: process.env.MAIL_FROM || 'J-Academy <noreply@jacademy.ma>',
     enabled: true
   };
-  if (host === 'smtp.gmail.com') mailConfig.service = 'gmail';
 } else {
   // Priorité 2 : fichier mail-config.json
   var configPath = path.join(__dirname, 'mail-config.json');

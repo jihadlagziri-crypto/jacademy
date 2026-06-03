@@ -9,18 +9,14 @@ var logoPath = path.join(__dirname, '..', '..', 'logo.png');
 function getTransporter() {
   if (transporter) return transporter;
   if (!mail.enabled) return null;
-  if (mail.service === 'gmail') {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: mail.user, pass: mail.pass }
-    });
-  } else {
-    transporter = nodemailer.createTransport({
-      host: mail.host, port: mail.port || 587,
-      secure: !!mail.secure,
-      auth: { user: mail.user, pass: mail.pass }
-    });
-  }
+  transporter = nodemailer.createTransport({
+    host: mail.host, port: mail.port || 587,
+    secure: !!mail.secure,
+    auth: { user: mail.user, pass: mail.pass },
+    connectionTimeout: 7000,   // 7s pour la connexion TCP
+    greetingTimeout: 7000,     // 7s pour le greeting SMTP
+    socketTimeout: 12000       // 12s total par opération
+  });
   return transporter;
 }
 
@@ -36,11 +32,8 @@ async function sendMail(to, subject, html) {
         cid: 'logo'
       });
     }
-    console.log('SMTP connecting to', mail.host || 'gmail', 'port', mail.port || (mail.service === 'gmail' ? 587 : 587));
-    await Promise.race([
-      t.sendMail({ from: mail.from || mail.user, to, subject, html, attachments }),
-      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('Timeout SMTP (15s)')); }, 15000); })
-    ]);
+    console.log('SMTP connect to', mail.host + ':' + (mail.port || 587) + ' as ' + mail.user);
+    await t.sendMail({ from: mail.from || mail.user, to, subject, html, attachments });
     return { sent: true };
   } catch (e) {
     return { sent: false, reason: e.message };

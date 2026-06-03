@@ -408,7 +408,7 @@ function sendNotification() {
   var doSend = function() {
     API.sendNotification(title, msg).then(function(r2) {
       if (r2 && r2.error) { document.getElementById('ntf-status').innerHTML = '<span style="color:#C0392B">' + r2.error + '</span>'; btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Envoyer à tous'; return; }
-      document.getElementById('ntf-status').innerHTML = '<span style="color:#1a7a1a">✓ ' + (r2 && r2.sent ? r2.sent + '/' + r2.total : '0/' + r2.total) + ' envoyé(s)' + (r2 && r2.failed ? ', ' + r2.failed + ' échec(s)' : '') + '</span>';
+      document.getElementById('ntf-status').innerHTML = '<span style="color:#1a7a1a">✓ ' + (r2 && r2.sent ? r2.sent + '/' + r2.total : '0/' + r2.total) + ' envoyé(s)' + (r2 && r2.failed ? ', ' + r2.failed + ' échec(s)' : '') + (r2 && r2.reason ? '<br><span style="color:#C0392B;font-size:0.8rem">Raison : ' + r2.reason + '</span>' : '') + '</span>';
       btn.innerHTML = '<i class="ti ti-check"></i> Envoyé';
       setTimeout(closeNotifyModal, 2000);
     }).catch(function(e) {

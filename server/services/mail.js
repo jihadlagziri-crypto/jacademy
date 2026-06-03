@@ -36,9 +36,10 @@ async function sendMail(to, subject, html) {
         cid: 'logo'
       });
     }
+    console.log('SMTP connecting to', mail.host || 'gmail', 'port', mail.port || (mail.service === 'gmail' ? 587 : 587));
     await Promise.race([
       t.sendMail({ from: mail.from || mail.user, to, subject, html, attachments }),
-      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('Timeout SMTP (8s)')); }, 8000); })
+      new Promise(function(_, reject) { setTimeout(function() { reject(new Error('Timeout SMTP (15s)')); }, 15000); })
     ]);
     return { sent: true };
   } catch (e) {

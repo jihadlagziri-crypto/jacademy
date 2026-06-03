@@ -13,20 +13,20 @@ router.post('/signup', async (req, res) => {
     if (!password || password.length < 6) return res.status(400).json({ error: 'Mot de passe trop court' });
 
     const db = await getDb();
-    const existing = db.exec('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
+    const existing = await db.exec('SELECT id FROM users WHERE email = ?', [email.toLowerCase()]);
     if (existing.length && existing[0].values.length) return res.status(409).json({ error: 'Email déjà utilisé' });
 
     const hashed = await bcrypt.hash(password, 10);
-    db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+    await db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
       [name, email.toLowerCase(), hashed]
     );
-    saveDb();
+    await saveDb();
 
-    const row = db.exec('SELECT id, name, email, level, banned, createdAt FROM users WHERE email = ?', [email.toLowerCase()]);
+    const row = await db.exec('SELECT id, name, email, level, banned, createdAt FROM users WHERE email = ?', [email.toLowerCase()]);
     const user = row[0].values[0];
     const token = uuidv4();
-    db.run('INSERT INTO sessions (userId, token) VALUES (?, ?)', [user[0], token]);
-    saveDb();
+    await db.run('INSERT INTO sessions (userId, token) VALUES (?, ?)', [user[0], token]);
+    await saveDb();
 
     res.json({
       token,
@@ -50,7 +50,7 @@ router.post('/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Champs requis' });
 
     const db = await getDb();
-    const row = db.exec('SELECT id, name, email, password, level, banned, createdAt FROM users WHERE email = ?', [email.toLowerCase()]);
+    const row = await db.exec('SELECT id, name, email, password, level, banned, createdAt FROM users WHERE email = ?', [email.toLowerCase()]);
     if (!row.length || !row[0].values.length) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
     const u = row[0].values[0];
@@ -58,8 +58,8 @@ router.post('/login', async (req, res) => {
     if (!match) return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
 
     const token = uuidv4();
-    db.run('INSERT INTO sessions (userId, token) VALUES (?, ?)', [u[0], token]);
-    saveDb();
+    await db.run('INSERT INTO sessions (userId, token) VALUES (?, ?)', [u[0], token]);
+    await saveDb();
 
     res.json({
       token,
@@ -74,8 +74,8 @@ router.post('/logout', async (req, res) => {
   const { token } = req.body;
   if (token) {
     const db = await getDb();
-    db.run('DELETE FROM sessions WHERE token = ?', [token]);
-    saveDb();
+    await db.run('DELETE FROM sessions WHERE token = ?', [token]);
+    await saveDb();
   }
   res.json({ ok: true });
 });
@@ -85,7 +85,7 @@ router.get('/session', async (req, res) => {
   if (!token) return res.json({ user: null });
 
   const db = await getDb();
-  const row = db.exec(
+  const row = await db.exec(
     'SELECT u.id, u.name, u.email, u.level, u.banned, u.createdAt FROM sessions s JOIN users u ON s.userId = u.id WHERE s.token = ?',
     [token]
   );
@@ -101,11 +101,11 @@ router.put('/user/level', async (req, res) => {
   if (!token || !level) return res.status(400).json({ error: 'Requis' });
 
   const db = await getDb();
-  const row = db.exec('SELECT userId FROM sessions WHERE token = ?', [token]);
+  const row = await db.exec('SELECT userId FROM sessions WHERE token = ?', [token]);
   if (!row.length || !row[0].values.length) return res.status(401).json({ error: 'Non connecté' });
 
-  db.run('UPDATE users SET level = ? WHERE id = ?', [level, row[0].values[0][0]]);
-  saveDb();
+  await db.run('UPDATE users SET level = ? WHERE id = ?', [level, row[0].values[0][0]]);
+  await saveDb();
   res.json({ ok: true });
 });
 

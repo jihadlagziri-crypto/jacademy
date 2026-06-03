@@ -4,73 +4,84 @@ const fs = require('fs');
 
 const DB_PATH = path.join(__dirname, 'jacademy.db');
 let db = null;
+let pgPool = null;
+let usingPg = false;
+var rawSqlite = null; // keep reference to raw sql.js DB for saveDb
 
 async function getDb() {
   if (db) return db;
+  if (process.env.DATABASE_URL) return getPgDb();
+  return getSqliteDb();
+}
+
+async function getPgDb() {
+  const { Pool } = require('pg');
+  pgPool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+  usingPg = true;
+
+  await pgPool.query(`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, level TEXT, banned INTEGER DEFAULT 0, createdat TEXT DEFAULT to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))`);
+  await pgPool.query(`CREATE TABLE IF NOT EXISTS content (id SERIAL PRIMARY KEY, niveau TEXT NOT NULL, matiere TEXT NOT NULL, type TEXT NOT NULL, titre TEXT NOT NULL, lien TEXT, duree TEXT, pages TEXT, visible INTEGER DEFAULT 1, file_path TEXT, createdat TEXT DEFAULT to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))`);
+  await pgPool.query(`CREATE TABLE IF NOT EXISTS sessions (id SERIAL PRIMARY KEY, userid INTEGER NOT NULL REFERENCES users(id), token TEXT NOT NULL UNIQUE, createdat TEXT DEFAULT to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))`);
+  await pgPool.query(`CREATE TABLE IF NOT EXISTS activity (id SERIAL PRIMARY KEY, message TEXT NOT NULL, type TEXT DEFAULT 'info', createdat TEXT DEFAULT to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SS"Z"'))`);
+
+  var colMap = { userid:'userId', createdat:'createdAt', file_path:'filePath' };
+
+  function conv(sql, params) {
+    if (!params || !params.length) return { sql: sql.replace(/\?/g, '$1'), params: [] };
+    var idx = 0;
+    return { sql: sql.replace(/\?/g, function() { return '$' + (++idx); }), params: params };
+  }
+
+  db = {
+    exec: async function(sql, params) {
+      try {
+        var c = conv(sql, params);
+        var r = await pgPool.query(c.sql, c.params);
+        if (!r.rows || !r.rows.length) return [];
+        var rawCols = Object.keys(r.rows[0]);
+        var cols = rawCols.map(function(c2) { return colMap[c2.toLowerCase()] || c2; });
+        var vals = r.rows.map(function(row) { return rawCols.map(function(c2) { return row[c2]; }); });
+        return [{ columns: cols, values: vals }];
+      } catch(e) { console.error('PG exec:', e.message, sql); return []; }
+    },
+    run: async function(sql, params) {
+      try {
+        var c = conv(sql, params);
+        await pgPool.query(c.sql, c.params);
+      } catch(e) { console.error('PG run:', e.message, sql); }
+    }
+  };
+  return db;
+}
+
+async function getSqliteDb() {
   const SQL = await initSqlJs();
   if (fs.existsSync(DB_PATH)) {
-    const buffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(buffer);
+    var buffer = fs.readFileSync(DB_PATH);
+    rawSqlite = new SQL.Database(buffer);
   } else {
-    db = new SQL.Database();
+    rawSqlite = new SQL.Database();
   }
-  db.run('PRAGMA journal_mode=WAL');
-  db.run('PRAGMA foreign_keys=ON');
-  initTables();
+  rawSqlite.run('PRAGMA journal_mode=WAL');
+  rawSqlite.run('PRAGMA foreign_keys=ON');
+  rawSqlite.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, level TEXT, banned INTEGER DEFAULT 0, createdAt TEXT DEFAULT (datetime(\'now\')))');
+  rawSqlite.run('CREATE TABLE IF NOT EXISTS content (id INTEGER PRIMARY KEY AUTOINCREMENT, niveau TEXT NOT NULL, matiere TEXT NOT NULL, type TEXT NOT NULL, titre TEXT NOT NULL, lien TEXT, duree TEXT, pages TEXT, visible INTEGER DEFAULT 1, file_path TEXT, createdAt TEXT DEFAULT (datetime(\'now\')))');
+  rawSqlite.run('CREATE TABLE IF NOT EXISTS sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, token TEXT NOT NULL UNIQUE, createdAt TEXT DEFAULT (datetime(\'now\')), FOREIGN KEY (userId) REFERENCES users(id))');
+  rawSqlite.run('CREATE TABLE IF NOT EXISTS activity (id INTEGER PRIMARY KEY AUTOINCREMENT, message TEXT NOT NULL, type TEXT DEFAULT \'info\', createdAt TEXT DEFAULT (datetime(\'now\')))');
   saveDb();
+
+  db = {
+    exec: async function(sql, params) { return rawSqlite.exec(sql, params); },
+    run: async function(sql, params) { rawSqlite.run(sql, params); }
+  };
   return db;
 }
 
 function saveDb() {
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(DB_PATH, buffer);
-}
-
-function initTables() {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL,
-      level TEXT,
-      banned INTEGER DEFAULT 0,
-      createdAt TEXT DEFAULT (datetime('now'))
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS content (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      niveau TEXT NOT NULL,
-      matiere TEXT NOT NULL,
-      type TEXT NOT NULL,
-      titre TEXT NOT NULL,
-      lien TEXT,
-      duree TEXT,
-      pages TEXT,
-      visible INTEGER DEFAULT 1,
-      file_path TEXT,
-      createdAt TEXT DEFAULT (datetime('now'))
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      userId INTEGER NOT NULL,
-      token TEXT NOT NULL UNIQUE,
-      createdAt TEXT DEFAULT (datetime('now')),
-      FOREIGN KEY (userId) REFERENCES users(id)
-    )
-  `);
-  db.run(`
-    CREATE TABLE IF NOT EXISTS activity (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      message TEXT NOT NULL,
-      type TEXT DEFAULT 'info',
-      createdAt TEXT DEFAULT (datetime('now'))
-    )
-  `);
+  if (rawSqlite) {
+    var data = rawSqlite.export();
+    fs.writeFileSync(DB_PATH, Buffer.from(data));
+  }
 }
 
 var DEFAULT_CONTENT = [
@@ -147,28 +158,33 @@ var DEFAULT_CONTENT = [
 ];
 
 async function seedFromLocalStorage() {
-  const db = await getDb();
+  const bcrypt = require('bcryptjs');
+  var hash = bcrypt.hashSync('admin1234', 10);
 
-  var adminRow = db.exec('SELECT id FROM users WHERE email = ?', ['admin@jacademy.ma']);
-  if (!adminRow.length || !adminRow[0].values.length) {
-    const bcrypt = require('bcryptjs');
-    var hash = bcrypt.hashSync('admin1234', 10);
-    db.run('INSERT OR IGNORE INTO users (name, email, password) VALUES (?, ?, ?)',
-      ['Administrateur', 'admin@jacademy.ma', hash]
-    );
-    saveDb();
+  if (process.env.DATABASE_URL) {
+    await pgPool.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING', ['Administrateur', 'admin@jacademy.ma', hash]);
+    var r = await pgPool.query('SELECT COUNT(*) as cnt FROM content');
+    if (parseInt(r.rows[0].cnt) === 0) {
+      for (var item of DEFAULT_CONTENT) {
+        await pgPool.query('INSERT INTO content (niveau, matiere, type, titre, lien, duree, visible) VALUES ($1, $2, $3, $4, $5, $6, 1)', [item.niveau, item.matiere, item.type, item.titre, item.lien || null, item.duree || null]);
+      }
+    }
+    return;
   }
 
-  // Seed default content if DB is empty
-  var contentRow = db.exec('SELECT COUNT(*) as cnt FROM content');
-  if (!contentRow.length || !contentRow[0].values.length || contentRow[0].values[0][0] === 0) {
-    DEFAULT_CONTENT.forEach(function(item) {
-      db.run('INSERT OR IGNORE INTO content (niveau, matiere, type, titre, lien, duree, visible) VALUES (?, ?, ?, ?, ?, ?, 1)',
-        [item.niveau, item.matiere, item.type, item.titre, item.lien || null, item.duree || null]
-      );
-    });
+  // SQLite
+  var d = await getDb();
+  var adminRow = await d.exec('SELECT id FROM users WHERE email = ?', ['admin@jacademy.ma']);
+  if (!adminRow.length || !adminRow[0].values.length) {
+    await d.run('INSERT OR IGNORE INTO users (name, email, password) VALUES (?, ?, ?)', ['Administrateur', 'admin@jacademy.ma', hash]);
     saveDb();
-    console.log('Seeded ' + DEFAULT_CONTENT.length + ' default content items');
+  }
+  var contentRow = await d.exec('SELECT COUNT(*) as cnt FROM content');
+  if (!contentRow.length || !contentRow[0].values.length || contentRow[0].values[0][0] === 0) {
+    for (var item of DEFAULT_CONTENT) {
+      await d.run('INSERT OR IGNORE INTO content (niveau, matiere, type, titre, lien, duree, visible) VALUES (?, ?, ?, ?, ?, ?, 1)', [item.niveau, item.matiere, item.type, item.titre, item.lien || null, item.duree || null]);
+    }
+    saveDb();
   }
 }
 

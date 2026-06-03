@@ -81,6 +81,25 @@ router.put('/:id/toggle', requireAdmin, async (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/seed', requireAdmin, async (req, res) => {
+  const { items } = req.body;
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items requis' });
+  const db = await getDb();
+  let count = 0;
+  items.forEach(function(item) {
+    if (!item.titre || !item.matiere) return;
+    var existing = db.exec('SELECT id FROM content WHERE titre = ? AND matiere = ?', [item.titre, item.matiere]);
+    if (!existing.length || !existing[0].values.length) {
+      db.run('INSERT INTO content (niveau, matiere, type, titre, lien, duree, visible, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [item.niveau || 'all', item.matiere, item.type || 'video', item.titre, item.lien || null, item.duree || null, item.visible !== false ? 1 : 0, item.createdAt || new Date().toISOString().split('T')[0]]);
+      count++;
+    }
+  });
+  saveDb();
+  await logActivity('Import : ' + count + ' contenus synchronisés', 'content');
+  res.json({ seeded: count });
+});
+
 async function logActivity(message, type) {
   const db = await getDb();
   db.run('INSERT INTO activity (message, type) VALUES (?, ?)', [message, type || 'info']);

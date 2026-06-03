@@ -89,6 +89,14 @@ var API = {
     return api('/activity');
   },
 
+  // Seed (sync localStorage to server)
+  seedContent: function(items) {
+    return api('/content/seed', { method: 'POST', body: { items: items } });
+  },
+  seedUsers: function(users) {
+    return api('/users/seed', { method: 'POST', body: { users: users } });
+  },
+
   // Mail
   sendNotification: function(title, message) {
     return api('/mail/send', { method: 'POST', body: { title: title, message: message } });

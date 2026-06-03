@@ -33,6 +33,26 @@ router.put('/:id/ban', async (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/seed', async (req, res) => {
+  const { users } = req.body;
+  if (!Array.isArray(users)) return res.status(400).json({ error: 'users requis' });
+  const db = await getDb();
+  const bcrypt = require('bcryptjs');
+  let count = 0;
+  users.forEach(function(u) {
+    if (!u.email || u.email === 'admin@jacademy.ma') return;
+    var existing = db.exec('SELECT id FROM users WHERE email = ?', [u.email]);
+    if (!existing.length || !existing[0].values.length) {
+      var hash = bcrypt.hashSync(u.password || 'password', 10);
+      db.run('INSERT INTO users (name, email, password, level, banned, createdAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [u.name || u.email, u.email, hash, u.level || null, u.banned ? 1 : 0, u.createdAt || new Date().toISOString()]);
+      count++;
+    }
+  });
+  saveDb();
+  res.json({ seeded: count });
+});
+
 router.delete('/:id', async (req, res) => {
   const db = await getDb();
   db.run('DELETE FROM users WHERE id = ?', [req.params.id]);

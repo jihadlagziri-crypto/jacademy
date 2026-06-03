@@ -197,6 +197,6 @@ function timeAgo(isoStr) {
   return 'il y a ' + Math.floor(diff/86400) + 'j';
 }
 
-var NIVEAU_LABELS  = { college:'Collège', college1:'1ère année Collège', college2:'2ème année Collège', college3:'3ème année Collège', tronc:'Tronc commun', bac1:'1ère Bac', bac2:'2ème Bac' };
+var NIVEAU_LABELS  = { all:'Tous les niveaux', college:'Collège', college1:'1ère année Collège', college2:'2ème année Collège', college3:'3ème année Collège', tronc:'Tronc commun', bac1:'1ère Bac', bac2:'2ème Bac' };
 var MATIERE_LABELS = { maths:'Mathématiques', physique:'Physique-Chimie', svt:'SVT', francais:'Français', anglais:'Anglais', histoire:'Histoire-Géo', philo:'Philosophie', informatique:'Informatique', info:'Informatique' };
 var TYPE_LABELS    = { video:'Vidéo', resume:'Résumé PDF', exercice:'Exercices', quiz:'Quiz' };

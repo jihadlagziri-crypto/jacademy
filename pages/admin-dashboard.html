@@ -199,6 +199,7 @@
     <div class="page-title"><i class="ti ti-dashboard" style="margin-right:8px;color:#555"></i>Tableau de bord</div>
     <div class="topbar-right">
       <div style="font-size:0.75rem;color:#444" id="last-update"></div>
+      <button class="tb-btn" id="sync-btn" onclick="syncToServer()"><i class="ti ti-cloud-upload"></i> Synchroniser</button>
       <button class="tb-btn" onclick="location.reload()"><i class="ti ti-refresh"></i> Actualiser</button>
     </div>
   </div>
@@ -365,6 +366,37 @@ if (window.API) {
 } else {
   document.getElementById('mail-status').innerHTML = 
     '<div class="act-item"><div class="act-dot" style="background:#C0392B"></div><div><div class="act-msg">Serveur hors ligne</div><div class="act-time">Les notifications sont désactivées</div></div></div>';
+}
+
+// ── Sync localStorage → serveur ──
+function syncToServer() {
+  if (!window.API) { alert('Serveur hors ligne'); return; }
+  var btn = document.getElementById('sync-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Synchronisation...';
+
+  var items = getContent();
+  var users = getAllUsers().filter(function(u) { return u.email !== ADMIN_EMAIL; }).map(function(u) {
+    try { return { name: u.name, email: u.email, password: atob(u.password), level: u.level, banned: u.banned, createdAt: u.createdAt }; }
+    catch(e) { return { name: u.name, email: u.email, password: 'JAcademy2025!', level: u.level, banned: u.banned, createdAt: u.createdAt }; }
+  });
+
+  var results = [];
+
+  API.seedContent(items).then(function(r) {
+    results.push('Contenus : ' + (r.seeded || 0) + ' ajoutés');
+    return API.seedUsers(users);
+  }).then(function(r) {
+    results.push('Utilisateurs : ' + (r.seeded || 0) + ' ajoutés');
+    btn.innerHTML = '<i class="ti ti-check"></i> Terminé';
+    btn.disabled = false;
+    setTimeout(function() { btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Synchroniser'; }, 3000);
+    alert('Synchronisation terminée !\n' + results.join('\n') + '\n\nActualise la page pour voir les données.');
+  }).catch(function(e) {
+    btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Synchroniser';
+    btn.disabled = false;
+    alert('Erreur de synchronisation : ' + (e.message || 'serveur indisponible'));
+  });
 }
 </script>
 </body>

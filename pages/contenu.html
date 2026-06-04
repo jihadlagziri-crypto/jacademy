@@ -140,6 +140,7 @@
       display: flex; flex-direction: column; align-items: center;
       overflow: auto; padding: 20px;
     }
+    .pdf-modal-body #pdf-embed { display:none;width:100%;height:100%;border:0; }
     .pdf-modal-body canvas {
       display: block; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
@@ -429,6 +430,7 @@
     <div class="pdf-modal-body" id="pdf-body">
       <div class="pdf-loading" id="pdf-loading">Chargement du PDF...</div>
       <canvas id="pdf-canvas"></canvas>
+      <iframe id="pdf-embed" src="" style="display:none;width:100%;height:100%;border:0"></iframe>
     </div>
   </div>
 </div>
@@ -636,22 +638,45 @@
     renderPdfPage(pdfPageNum);
   }
 
+  function getDriveId(url) {
+    var m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : (url.match(/id=([a-zA-Z0-9_-]+)/) ? RegExp.$1 : null);
+  }
+
   function openPdfModal(url, title) {
     var canvas = document.getElementById('pdf-canvas');
+    var embed  = document.getElementById('pdf-embed');
+    var loading = document.getElementById('pdf-loading');
+    var controls = document.querySelector('.pdf-controls');
     canvas.style.display = 'none';
-    document.getElementById('pdf-loading').style.display = 'block';
+    embed.style.display = 'none';
+    embed.src = '';
+    loading.style.display = 'block';
+    loading.innerHTML = 'Chargement du PDF...';
     document.getElementById('pdf-modal-title').textContent = title;
     document.getElementById('pdf-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     pdfDoc = null; pdfPageNum = 1; pdfScale = 2.0;
     document.getElementById('pdf-zoom-info').textContent = '200%';
+    controls.style.display = 'flex';
+
+    var driveId = getDriveId(url);
+    if (driveId) {
+      // Google Drive → viewer intégré Google Docs
+      loading.style.display = 'none';
+      controls.style.display = 'none';
+      embed.style.display = 'block';
+      embed.src = 'https://docs.google.com/viewer?url=https://drive.google.com/uc?export=download&id=' + driveId + '&embedded=true';
+      return;
+    }
+
     pdfjsLib.getDocument(url).promise.then(function(doc) {
       if (!document.getElementById('pdf-modal').classList.contains('open')) return;
       pdfDoc = doc;
       renderPdfPage(1);
     }).catch(function() {
       if (!document.getElementById('pdf-modal').classList.contains('open')) return;
-      document.getElementById('pdf-loading').innerHTML = '<span style="color:#C0392B">Erreur de chargement du PDF. <a href="' + url + '" target="_blank" style="color:#fff">Ouvrir dans un nouvel onglet</a></span>';
+      loading.innerHTML = '<span style="color:#C0392B">Erreur de chargement du PDF. <a href="' + url + '" target="_blank" style="color:#fff">Ouvrir dans un nouvel onglet</a></span>';
     });
   }
 
@@ -668,6 +693,8 @@
     document.body.style.overflow = '';
     pdfDoc = null;
     document.getElementById('pdf-canvas').style.display = 'none';
+    document.getElementById('pdf-embed').style.display = 'none';
+    document.getElementById('pdf-embed').src = '';
     document.getElementById('pdf-loading').style.display = 'block';
     document.getElementById('pdf-loading').innerHTML = 'Chargement du PDF...';
   }

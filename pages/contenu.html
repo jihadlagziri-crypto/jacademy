@@ -199,7 +199,7 @@
     }
     .video-modal-embed video { object-fit: contain; background: #000; }
     #yt-player { z-index: 1; }
-    #yt-player-inner, #yt-player-inner iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #yt-player iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0; }
     #vimeo-player { z-index: 1; }
     /* Overlay play/pause sans YouTube branding */
     .yt-overlay {
@@ -840,13 +840,21 @@
     }
     }
 
-    // Clic sur overlay YouTube → toggle play/pause
+    // Clic sur overlay YouTube → toggle play/pause (via postMessage)
+    var YT_PLAYING = false;
     document.getElementById('yt-overlay').addEventListener('click', function() {
-      if (!YT_PLAYER) return;
-      if (YT_PLAYER.getPlayerState() === YT.PlayerState.PLAYING) {
-        YT_PLAYER.pauseVideo();
-      } else {
-        YT_PLAYER.playVideo();
+      var ifr = document.querySelector('#yt-player iframe');
+      if (!ifr) return;
+      var msg = JSON.stringify({ event: 'command', func: YT_PLAYING ? 'pauseVideo' : 'playVideo', args: '' });
+      ifr.contentWindow.postMessage(msg, '*');
+      YT_PLAYING = !YT_PLAYING;
+      document.getElementById('yt-overlay-btn').innerHTML = YT_PLAYING ? '<i class="ti ti-player-pause-filled"></i>' : '<i class="ti ti-player-play-filled"></i>';
+    });
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.event === 'onStateChange') {
+        YT_PLAYING = (e.data.info === 1);
+        var btn = document.getElementById('yt-overlay-btn');
+        btn.innerHTML = YT_PLAYING ? '<i class="ti ti-player-pause-filled"></i>' : '<i class="ti ti-player-play-filled"></i>';
       }
     });
 
@@ -869,16 +877,6 @@
     });
   });
 
-  // YouTube IFrame API
-  var YT_PLAYER = null;
-  var YT_INIT_QUEUE = [];
-  function onYouTubeIframeAPIReady() {
-    for (var i = 0; i < YT_INIT_QUEUE.length; i++) {
-      createYTPlayer(YT_INIT_QUEUE[i]);
-    }
-    YT_INIT_QUEUE = [];
-  }
 </script>
-<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>

@@ -662,11 +662,11 @@
 
     var driveId = getDriveId(url);
     if (driveId) {
-      // Google Drive → viewer intégré Google Docs
+      // Google Drive → preview natif
       loading.style.display = 'none';
       controls.style.display = 'none';
       embed.style.display = 'block';
-      embed.src = 'https://docs.google.com/viewer?url=https://drive.google.com/uc?export=download&id=' + driveId + '&embedded=true';
+      embed.src = 'https://drive.google.com/file/d/' + driveId + '/preview';
       return;
     }
 

@@ -197,6 +197,11 @@
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
     .video-modal-embed video { object-fit: contain; background: #000; }
+    .yt-branding-blocker {
+      position: absolute; bottom: 0; right: 0; width: 180px; height: 52px;
+      z-index: 4; background: transparent; cursor: default;
+    }
+    .yt-branding-blocker:hover { cursor: default; }
 
     .video-watermark {
       position: absolute; left: 0; top: 0; width: 100%; height: 100%;
@@ -446,7 +451,7 @@
   function getEmbedUrl(url) {
     if (!url) return null;
     var id = getYoutubeId(url);
-    if (id) return 'https://www.youtube.com/embed/' + id + '?autoplay=1';
+    if (id) return 'https://www.youtube.com/embed/' + id + '?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3';
     var vm = url.match(/vimeo\.com\/(\d+)/);
     if (vm) return 'https://player.vimeo.com/video/' + vm[1] + '?autoplay=1';
     return null;
@@ -492,14 +497,24 @@
     if (embed) {
       iframe.style.display = 'block';
       iframe.src = embed;
+      // Bloque le clic "Regarder sur YouTube" dans le coin bas-droit
+      var blocker = document.getElementById('yt-branding-blocker') || (function(){
+        var el = document.createElement('div');
+        el.id = 'yt-branding-blocker';
+        el.className = 'yt-branding-blocker';
+        document.getElementById('video-player').parentNode.appendChild(el);
+        return el;
+      })();
     } else {
+      var blocker = document.getElementById('yt-branding-blocker');
+      if (blocker) blocker.remove();
       video.style.display = 'block';
       video.src = url;
       video.play().catch(function(){});
     }
     document.getElementById('video-modal-title').textContent = title;
     document.getElementById('video-modal-link').href = url;
-    document.getElementById('video-modal-link').style.display = embed ? 'inline-flex' : 'none';
+    document.getElementById('video-modal-link').style.display = 'none';
     document.getElementById('video-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     setWatermark();
@@ -513,6 +528,8 @@
     video.pause();
     video.src = '';
     video.style.display = 'none';
+    var blocker = document.getElementById('yt-branding-blocker');
+    if (blocker) blocker.remove();
     document.getElementById('video-modal').classList.remove('open');
     document.body.style.overflow = '';
   }

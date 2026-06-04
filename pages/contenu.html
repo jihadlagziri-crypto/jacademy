@@ -502,48 +502,36 @@
   }
 
   function openVideoModal(url, title) {
-    var ytDiv   = document.getElementById('yt-player');
     var vimeo   = document.getElementById('vimeo-player');
     var video   = document.getElementById('video-player-local');
     var overlay = document.getElementById('yt-overlay');
 
     // Hide all players
-    if (YT_PLAYER) { YT_PLAYER.stopVideo(); YT_PLAYER.destroy(); YT_PLAYER = null; }
-    ytDiv.style.display = 'none'; ytDiv.innerHTML = '';
+    document.getElementById('yt-player').style.display = 'none';
+    document.getElementById('yt-player').innerHTML = '';
+    if (YT_PLAYER) { try { YT_PLAYER.destroy(); } catch(e) {} YT_PLAYER = null; }
     vimeo.style.display = 'none'; vimeo.src = '';
     video.style.display = 'none'; video.pause(); video.src = '';
     overlay.style.display = 'none';
 
     var ytId = getYoutubeId(url);
     if (ytId) {
-      // YouTube via IFrame API (controls=0, pas de branding)
-      ytDiv.style.display = 'block';
-      overlay.style.display = 'flex';
-      var div = document.createElement('div');
-      div.id = 'yt-player-inner';
-      ytDiv.appendChild(div);
-      if (typeof YT !== 'undefined' && YT.Player) {
-        YT_PLAYER = new YT.Player('yt-player-inner', {
-          width: '100%', height: '100%',
-          videoId: ytId,
-          playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, fs: 0, cc_load_policy: 0, playsinline: 1 },
-          events: {
-            onStateChange: function(e) {
-              var btn = document.getElementById('yt-overlay-btn');
-              if (e.data === YT.PlayerState.PLAYING) btn.innerHTML = '<i class="ti ti-player-pause-filled"></i>';
-              else btn.innerHTML = '<i class="ti ti-player-play-filled"></i>';
-            }
-          }
-        });
+      document.getElementById('yt-player').style.display = 'block';
+      var inner = document.createElement('div');
+      inner.id = 'yt-player-inner';
+      document.getElementById('yt-player').appendChild(inner);
+      if (typeof YT !== 'undefined' && typeof YT.Player === 'function') {
+        createYTPlayer(ytId);
+      } else {
+        YT_INIT_QUEUE.push(ytId);
+        overlay.style.display = 'flex';
       }
     } else {
       var embed = getEmbedUrl(url);
       if (embed) {
-        // Vimeo
         vimeo.style.display = 'block';
         vimeo.src = embed;
       } else {
-        // Local video
         video.style.display = 'block';
         video.src = url;
         video.play().catch(function(){});
@@ -553,6 +541,24 @@
     document.getElementById('video-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     setWatermark();
+  }
+
+  function createYTPlayer(videoId) {
+    var div = document.getElementById('yt-player-inner');
+    if (!div) return;
+    document.getElementById('yt-overlay').style.display = 'flex';
+    YT_PLAYER = new YT.Player('yt-player-inner', {
+      width: '100%', height: '100%',
+      videoId: videoId,
+      playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, fs: 0, cc_load_policy: 0, playsinline: 1 },
+      events: {
+        onStateChange: function(e) {
+          var btn = document.getElementById('yt-overlay-btn');
+          if (e.data === YT.PlayerState.PLAYING) btn.innerHTML = '<i class="ti ti-player-pause-filled"></i>';
+          else btn.innerHTML = '<i class="ti ti-player-play-filled"></i>';
+        }
+      }
+    });
   }
 
   function closeVideoModal() {
@@ -865,7 +871,13 @@
 
   // YouTube IFrame API
   var YT_PLAYER = null;
-  function onYouTubeIframeAPIReady() {}
+  var YT_INIT_QUEUE = [];
+  function onYouTubeIframeAPIReady() {
+    for (var i = 0; i < YT_INIT_QUEUE.length; i++) {
+      createYTPlayer(YT_INIT_QUEUE[i]);
+    }
+    YT_INIT_QUEUE = [];
+  }
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>

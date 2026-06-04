@@ -140,7 +140,7 @@
       display: flex; flex-direction: column; align-items: center;
       overflow: auto; padding: 20px;
     }
-    .pdf-modal-body #pdf-embed { display:none;width:100%;height:100%;border:0; }
+    .pdf-modal-body #pdf-embed { display:none;width:100%;height:100%;border:0;position:absolute;top:0;left:0; }
     .pdf-modal-body canvas {
       display: block; margin: 0 auto; box-shadow: 0 2px 12px rgba(0,0,0,0.3);
     }
@@ -640,7 +640,9 @@
 
   function getDriveId(url) {
     var m = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    return m ? m[1] : (url.match(/id=([a-zA-Z0-9_-]+)/) ? RegExp.$1 : null);
+    if (m) return m[1];
+    m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : null;
   }
 
   function openPdfModal(url, title) {
@@ -662,10 +664,12 @@
 
     var driveId = getDriveId(url);
     if (driveId) {
-      // Google Drive → preview natif
       loading.style.display = 'none';
       controls.style.display = 'none';
+      canvas.style.display = 'none';
       embed.style.display = 'block';
+      document.getElementById('pdf-body').style.padding = '0';
+      document.getElementById('pdf-body').style.overflow = 'hidden';
       embed.src = 'https://drive.google.com/file/d/' + driveId + '/preview';
       return;
     }

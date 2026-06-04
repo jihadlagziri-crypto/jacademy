@@ -192,16 +192,31 @@
     .video-modal-embed {
       position: relative; width: 100%; padding-top: 56.25%; background: #000;
     }
-    .video-modal-embed iframe,
+    #yt-player,
+    #vimeo-player,
     .video-modal-embed video {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     }
     .video-modal-embed video { object-fit: contain; background: #000; }
-    .yt-branding-blocker {
-      position: absolute; bottom: 0; right: 0; width: 180px; height: 52px;
-      z-index: 4; background: transparent; cursor: default;
+    #yt-player { z-index: 1; }
+    #yt-player-inner, #yt-player-inner iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    #vimeo-player { z-index: 1; }
+    /* Overlay play/pause sans YouTube branding */
+    .yt-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 3; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      background: transparent; transition: background 0.3s;
     }
-    .yt-branding-blocker:hover { cursor: default; }
+    .yt-overlay:hover { background: rgba(0,0,0,0.15); }
+    .yt-overlay-btn {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: rgba(0,0,0,0.65); border: none;
+      color: #fff; font-size: 1.6rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s;
+    }
+    .yt-overlay:hover .yt-overlay-btn { transform: scale(1.08); }
 
     .video-watermark {
       position: absolute; left: 0; top: 0; width: 100%; height: 100%;
@@ -381,13 +396,16 @@
   <div class="video-modal-content">
     <button class="video-modal-close" onclick="closeVideoModal()"><i class="ti ti-x"></i></button>
     <div class="video-modal-embed">
-      <iframe id="video-player" src="" frameborder="0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      <div id="yt-player"></div>
+      <iframe id="vimeo-player" src="" frameborder="0" allow="autoplay; encrypted-media" style="display:none"></iframe>
       <video id="video-player-local" src="" controls playsinline style="display:none" controlsList="nodownload" disablePictureInPicture oncontextmenu="return false"></video>
+      <div class="yt-overlay" id="yt-overlay" style="display:none">
+        <button class="yt-overlay-btn" id="yt-overlay-btn"><i class="ti ti-player-play-filled"></i></button>
+      </div>
       <div class="video-watermark" id="video-watermark"><span></span><span></span><span></span><span></span></div>
     </div>
     <div class="video-modal-info">
       <h3 id="video-modal-title"></h3>
-      <a id="video-modal-link" href="#" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-size:0.8rem;color:#666;text-decoration:none"><i class="ti ti-external-link"></i> Regarder sur YouTube</a>
     </div>
   </div>
 </div>
@@ -450,8 +468,6 @@
 
   function getEmbedUrl(url) {
     if (!url) return null;
-    var id = getYoutubeId(url);
-    if (id) return 'https://www.youtube.com/embed/' + id + '?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3';
     var vm = url.match(/vimeo\.com\/(\d+)/);
     if (vm) return 'https://player.vimeo.com/video/' + vm[1] + '?autoplay=1';
     return null;
@@ -486,50 +502,68 @@
   }
 
   function openVideoModal(url, title) {
-    var iframe = document.getElementById('video-player');
-    var video  = document.getElementById('video-player-local');
-    var embed  = getEmbedUrl(url);
-    iframe.style.display = 'none';
-    iframe.src = '';
-    video.style.display = 'none';
-    video.pause();
-    video.src = '';
-    if (embed) {
-      iframe.style.display = 'block';
-      iframe.src = embed;
-      // Bloque le clic "Regarder sur YouTube" dans le coin bas-droit
-      var blocker = document.getElementById('yt-branding-blocker') || (function(){
-        var el = document.createElement('div');
-        el.id = 'yt-branding-blocker';
-        el.className = 'yt-branding-blocker';
-        document.getElementById('video-player').parentNode.appendChild(el);
-        return el;
-      })();
+    var ytDiv   = document.getElementById('yt-player');
+    var vimeo   = document.getElementById('vimeo-player');
+    var video   = document.getElementById('video-player-local');
+    var overlay = document.getElementById('yt-overlay');
+
+    // Hide all players
+    if (YT_PLAYER) { YT_PLAYER.stopVideo(); YT_PLAYER.destroy(); YT_PLAYER = null; }
+    ytDiv.style.display = 'none'; ytDiv.innerHTML = '';
+    vimeo.style.display = 'none'; vimeo.src = '';
+    video.style.display = 'none'; video.pause(); video.src = '';
+    overlay.style.display = 'none';
+
+    var ytId = getYoutubeId(url);
+    if (ytId) {
+      // YouTube via IFrame API (controls=0, pas de branding)
+      ytDiv.style.display = 'block';
+      overlay.style.display = 'flex';
+      var div = document.createElement('div');
+      div.id = 'yt-player-inner';
+      ytDiv.appendChild(div);
+      if (typeof YT !== 'undefined' && YT.Player) {
+        YT_PLAYER = new YT.Player('yt-player-inner', {
+          width: '100%', height: '100%',
+          videoId: ytId,
+          playerVars: { autoplay: 1, controls: 0, modestbranding: 1, rel: 0, iv_load_policy: 3, fs: 0, cc_load_policy: 0, playsinline: 1 },
+          events: {
+            onStateChange: function(e) {
+              var btn = document.getElementById('yt-overlay-btn');
+              if (e.data === YT.PlayerState.PLAYING) btn.innerHTML = '<i class="ti ti-player-pause-filled"></i>';
+              else btn.innerHTML = '<i class="ti ti-player-play-filled"></i>';
+            }
+          }
+        });
+      }
     } else {
-      var blocker = document.getElementById('yt-branding-blocker');
-      if (blocker) blocker.remove();
-      video.style.display = 'block';
-      video.src = url;
-      video.play().catch(function(){});
+      var embed = getEmbedUrl(url);
+      if (embed) {
+        // Vimeo
+        vimeo.style.display = 'block';
+        vimeo.src = embed;
+      } else {
+        // Local video
+        video.style.display = 'block';
+        video.src = url;
+        video.play().catch(function(){});
+      }
     }
     document.getElementById('video-modal-title').textContent = title;
-    document.getElementById('video-modal-link').href = url;
-    document.getElementById('video-modal-link').style.display = 'none';
     document.getElementById('video-modal').classList.add('open');
     document.body.style.overflow = 'hidden';
     setWatermark();
   }
 
   function closeVideoModal() {
-    var iframe = document.getElementById('video-player');
-    var video  = document.getElementById('video-player-local');
-    iframe.src = '';
-    iframe.style.display = 'none';
-    video.pause();
-    video.src = '';
-    video.style.display = 'none';
-    var blocker = document.getElementById('yt-branding-blocker');
-    if (blocker) blocker.remove();
+    if (YT_PLAYER) { YT_PLAYER.stopVideo(); YT_PLAYER.destroy(); YT_PLAYER = null; }
+    document.getElementById('yt-player').style.display = 'none';
+    document.getElementById('yt-player').innerHTML = '';
+    document.getElementById('yt-overlay').style.display = 'none';
+    document.getElementById('vimeo-player').style.display = 'none';
+    document.getElementById('vimeo-player').src = '';
+    var video = document.getElementById('video-player-local');
+    video.pause(); video.src = ''; video.style.display = 'none';
     document.getElementById('video-modal').classList.remove('open');
     document.body.style.overflow = '';
   }
@@ -800,6 +834,16 @@
     }
     }
 
+    // Clic sur overlay YouTube → toggle play/pause
+    document.getElementById('yt-overlay').addEventListener('click', function() {
+      if (!YT_PLAYER) return;
+      if (YT_PLAYER.getPlayerState() === YT.PlayerState.PLAYING) {
+        YT_PLAYER.pauseVideo();
+      } else {
+        YT_PLAYER.playVideo();
+      }
+    });
+
     // Clic sur les contenus : vidéo → modale vidéo, PDF → modale PDF, autres → nouvel onglet
     document.querySelector('.content-sections').addEventListener('click', function(e) {
       var item = e.target.closest('.content-item');
@@ -818,6 +862,11 @@
       }
     });
   });
+
+  // YouTube IFrame API
+  var YT_PLAYER = null;
+  function onYouTubeIframeAPIReady() {}
 </script>
+<script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
